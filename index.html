@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v15</title>
+    <title>PiTaPa利用チェックツール v16</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,11 +28,11 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 印刷用スタイル - A4縦に最適化 (縮小表示・高密度) */
+        /* 印刷用スタイル - A4縦・高密度・省スペース */
         @media print {
             @page { 
                 size: A4 portrait; 
-                margin: 5mm; 
+                margin: 5mm 5mm 5mm 5mm; /* 上下左右5mm */
             }
             body { 
                 background-color: white; 
@@ -61,82 +61,107 @@
             
             .print-area { 
                 display: block !important;
-                zoom: 0.80; /* 全体を縮小して情報を詰め込む */
+                zoom: 0.85; /* 全体を85%に縮小 */
             }
 
-            /* 改ページ制御 */
-            .page-break { page-break-before: always; }
-            .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+            /* 改ページ制御: カードの途中での改ページを避けるが、カード間は詰める */
+            .page-break { 
+                page-break-before: auto; /* 強制改ページ廃止 */
+                page-break-inside: avoid; /* カード内での分割回避（可能な限り） */
+                margin-bottom: 15px; /* 次の人のデータとの間隔 */
+                border-bottom: 2px dashed #888; /* 区切り線 */
+                padding-bottom: 15px;
+            }
             
-            /* テーブルデザイン調整 - 高密度化 */
+            /* テーブルデザイン調整 - 極限まで高密度化 */
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                font-size: 7.5pt; 
+                font-size: 7pt; /* 文字サイズ縮小 */
                 table-layout: fixed; 
             }
             th, td { 
-                border: 1px solid #444; 
-                padding: 1px 3px; 
+                border: 1px solid #666; 
+                padding: 0px 2px; /* パディング最小 */
                 word-wrap: break-word; 
                 vertical-align: middle;
-                line-height: 1.1; 
+                line-height: 1.1; /* 行間圧縮 */
+                height: auto; /* 高さを内容に合わせる */
             }
             th { 
-                background-color: #e5e7eb !important; 
+                background-color: #f0f0f0 !important; 
                 color: #000 !important; 
                 font-weight: bold; 
                 text-align: center;
-                font-size: 8pt;
-                padding: 2px;
+                padding: 1px;
+                font-size: 7pt;
             }
             
-            /* 列幅 */
-            th:nth-child(1) { width: 9%; }
-            th:nth-child(2) { width: 11%; }
-            th:nth-child(3) { width: 11%; }
-            th:nth-child(4) { width: 34%; }
-            th:nth-child(5) { width: 10%; }
-            th:nth-child(6) { width: 25%; }
+            /* 列幅の最適化 */
+            th:nth-child(1) { width: 7%; }  /* 状態 (狭く) */
+            th:nth-child(2) { width: 8%; }  /* 日付 (狭く) */
+            th:nth-child(3) { width: 8%; }  /* 時間 (狭く) */
+            th:nth-child(4) { width: 45%; } /* 内容 (広く) */
+            th:nth-child(5) { width: 8%; }  /* 金額 (狭く) */
+            th:nth-child(6) { width: 24%; } /* 備考 (残りを割り当て) */
 
-            /* バッジ内の文字を小さく */
+            /* バッジ */
             td:nth-child(1) span { 
                 font-size: 6pt !important;
-                padding: 0px 2px !important; 
-                white-space: nowrap; 
+                padding: 0 !important; 
+                border: 1px solid #ccc !important;
+                margin: 0 !important;
+                display: inline-block;
+                white-space: nowrap;
+                line-height: 1;
             }
 
-            /* 備考も小さく */
-            td:nth-child(6) { font-size: 7pt; line-height: 1.0; }
+            /* 日付・時間 */
+            td:nth-child(2), td:nth-child(3) { 
+                text-align: center; 
+                white-space: nowrap; 
+                font-family: Arial, sans-serif; /* 等幅っぽくして見やすく */
+                letter-spacing: -0.5px; /* 文字間を詰める */
+            }
 
-            /* 金額右寄せ */
-            td:nth-child(5) { text-align: right; font-family: monospace; }
+            /* 内容 */
+            td:nth-child(4) { text-align: left; }
 
-            /* 日付・時間 中央揃え */
-            td:nth-child(2), td:nth-child(3) { text-align: center; white-space: nowrap; }
-
-            /* 色の維持 */
-            .bg-red-50 { background-color: #ffebeb !important; }
-            .text-red-600 { color: #d00000 !important; }
-            .bg-yellow-100 { background-color: #fffde7 !important; border: 1px solid #f9a825 !important; }
-            .text-yellow-800 { color: #f57f17 !important; }
+            /* 金額 */
+            td:nth-child(5) { text-align: right; font-family: Arial, sans-serif; }
             
+            /* 備考 */
+            td:nth-child(6) { font-size: 6.5pt; line-height: 1; }
+
+            /* 色の維持 (白黒印刷でも見分けがつく程度に) */
+            .bg-red-50 { background-color: #fff0f0 !important; }
+            .text-red-600 { color: #000 !important; font-weight: bold; } /* 赤字は太字黒に */
+            
+            /* カードスタイル解除 */
             .shadow-sm { box-shadow: none !important; border: none !important; }
             .rounded-xl { border-radius: 0 !important; border: none !important; }
             
-            .result-card { 
-                border-bottom: 2px solid #000; 
-                margin-bottom: 10px; 
-                padding-bottom: 5px; 
-            }
-            
+            /* ヘッダー情報 */
             .result-header { 
-                border-bottom: 1px solid #ccc; 
-                margin-bottom: 3px; 
-                padding: 3px 0; 
+                border-bottom: 1px solid #000; 
+                margin-bottom: 2px; 
+                padding: 2px 0; 
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
             }
             .result-header h3 { font-size: 10pt; margin: 0; }
-            .result-header p, .result-header div { font-size: 8pt; margin: 0; }
+            .result-header .summary-info { font-size: 8pt; margin: 0; }
+            
+            /* 未提出・重複サマリーのスタイル (印刷用) */
+            .print-summary-box {
+                border: 1px solid #000;
+                padding: 5px;
+                margin-bottom: 10px;
+                font-size: 8pt;
+                break-inside: avoid;
+            }
+            .print-summary-title { font-weight: bold; text-decoration: underline; margin-right: 5px; }
         }
     </style>
 </head>
@@ -868,7 +893,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v15
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v16
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
@@ -1213,16 +1238,22 @@
 
                                 {/* 印刷用ヘッダー要約 (印刷時のみ表示、画面では上記コンポーネントで表示) */}
                                 <div className="print-area hidden">
-                                    {(missingUsers.length > 0 || duplicateRouteUsers.length > 0) && (
-                                        <div className="mb-4 border-b-2 border-black pb-2">
-                                            <div className="flex gap-8">
-                                                <div>
-                                                    <span className="font-bold">未提出:</span> {missingUsers.map(u => u.name).join(", ")}
-                                                </div>
-                                                <div>
-                                                    <span className="font-bold">定期重複あり:</span> {duplicateRouteUsers.map(u => u.name).join(", ")}
-                                                </div>
-                                            </div>
+                                    {(missingUsers.length > 0) && (
+                                        <div className="print-summary-box">
+                                            <span className="print-summary-title">【未提出】</span>
+                                            {missingUsers.map(u => u.name).join(", ")}
+                                        </div>
+                                    )}
+                                    {(duplicateRouteUsers.length > 0) && (
+                                        <div className="print-summary-box">
+                                            <span className="print-summary-title">【定期区間重複あり】</span>
+                                            {duplicateRouteUsers.map(u => u.name).join(", ")}
+                                        </div>
+                                    )}
+                                    {(noUsageUsers.length > 0) && (
+                                        <div className="print-summary-box">
+                                            <span className="print-summary-title">【利用なし連絡済】</span>
+                                            {noUsageUsers.join(", ")}
                                         </div>
                                     )}
                                 </div>
@@ -1247,13 +1278,13 @@
                                                 <div className="flex gap-4 items-center">
                                                     {!noUsageUsers.includes(user.name) && (
                                                         <>
-                                                            <div className="text-right">
-                                                                <p className="text-xs text-gray-500">定期重複額</p>
-                                                                <p className="font-bold text-xl text-red-600">¥{user.targetAmount.toLocaleString()}</p>
+                                                            <div className="text-right summary-info">
+                                                                <span className="text-gray-500">定期重複額: </span>
+                                                                <span className="font-bold text-red-600">¥{user.targetAmount.toLocaleString()}</span>
                                                             </div>
-                                                            <div className="text-right border-l pl-4">
-                                                                <p className="text-xs text-gray-500">利用総額(対象外除く)</p>
-                                                                <p className="font-bold text-lg text-slate-700">¥{user.totalAmount.toLocaleString()}</p>
+                                                            <div className="text-right border-l pl-4 summary-info">
+                                                                <span className="text-gray-500">利用総額(対象外除): </span>
+                                                                <span className="font-bold text-slate-700">¥{user.totalAmount.toLocaleString()}</span>
                                                             </div>
                                                             {user.alertCount > 0 ? (
                                                                 <span className="ml-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg font-bold border border-red-100 flex items-center gap-2">
