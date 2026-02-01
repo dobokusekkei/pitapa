@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v10</title>
+    <title>PiTaPa利用チェックツール v12</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,11 +30,22 @@
 
         /* 印刷用スタイル - A4縦に最適化 */
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background-color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; }
+            @page { 
+                size: A4 portrait; 
+                margin: 10mm; 
+            }
+            body { 
+                background-color: white; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+                font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; 
+                font-size: 10pt;
+                width: 100%;
+                height: 100%;
+            }
             
             /* 印刷時に非表示にする要素 */
-            .no-print, header, nav, .upload-area, .settings-area, .utility-bar, .user-input-form, .alias-input-form, .info-panel { 
+            .no-print, header, nav, .upload-area, .settings-area, .utility-bar, .user-input-form, .alias-input-form, .info-panel, button { 
                 display: none !important; 
             }
             
@@ -46,6 +57,7 @@
                 padding: 0 !important; 
                 display: block !important;
                 background-color: white !important;
+                overflow: visible !important;
             }
             
             .print-area { 
@@ -56,21 +68,56 @@
             .page-break { page-break-before: always; }
             .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
             
-            /* テーブルデザイン調整 */
-            table { width: 100%; border-collapse: collapse; font-size: 9pt; table-layout: fixed; }
-            th, td { border: 1px solid #000; padding: 4px 6px; word-wrap: break-word; }
-            th { background-color: #f0f0f0 !important; color: #000 !important; font-weight: bold; }
+            /* テーブルデザイン調整 - A4縦幅に収まるように */
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 9pt; 
+                table-layout: fixed; 
+            }
+            th, td { 
+                border: 1px solid #000; 
+                padding: 4px 6px; 
+                word-wrap: break-word; 
+                vertical-align: top;
+            }
+            th { 
+                background-color: #f0f0f0 !important; 
+                color: #000 !important; 
+                font-weight: bold; 
+            }
             
+            /* 列幅の調整 */
+            th:nth-child(1) { width: 10%; } /* 状態 */
+            th:nth-child(2) { width: 12%; } /* 日付 */
+            th:nth-child(3) { width: 12%; } /* 時間 */
+            th:nth-child(4) { width: 30%; } /* 内容 */
+            th:nth-child(5) { width: 10%; } /* 金額 */
+            th:nth-child(6) { width: 26%; } /* 備考 */
+
             /* 色の維持 */
             .bg-red-50 { background-color: #ffebeb !important; }
             .text-red-600 { color: #d00000 !important; }
+            .bg-yellow-100 { background-color: #fffde7 !important; border: 1px solid #f9a825 !important; }
+            .text-yellow-800 { color: #f57f17 !important; }
             
             /* カードスタイル解除 */
             .shadow-sm { box-shadow: none !important; border: none !important; }
             .rounded-xl { border-radius: 0 !important; border: none !important; }
             
+            /* 結果カードの間隔 */
+            .result-card { 
+                border-bottom: 2px solid #000; 
+                margin-bottom: 20px; 
+                padding-bottom: 20px; 
+            }
+            
             /* ヘッダー情報 */
-            .result-header { border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+            .result-header { 
+                border-bottom: 1px solid #ccc; 
+                margin-bottom: 10px; 
+                padding-bottom: 5px; 
+            }
         }
     </style>
 </head>
@@ -142,6 +189,35 @@
             "神戸市営地下鉄": {
                 "西神・山手線": ["谷上", "新神戸", "三宮", "県庁前", "大倉山", "湊川公園", "上沢", "長田", "新長田", "板宿", "妙法寺", "名谷", "総合運動公園", "学園都市", "伊川谷", "西神南", "西神中央"],
                 "海岸線": ["三宮・花時計前", "旧居留地・大丸前", "みなと元町", "ハーバーランド", "中央市場前", "和田岬", "御崎公園", "苅藻", "駒ヶ林", "新長田"]
+            },
+            "京福電気鉄道": {
+                "嵐山本線": ["四条大宮", "西院", "西大路三条", "山ノ内", "嵐電天神川", "蚕ノ社", "太秦広隆寺", "帷子ノ辻", "有栖川", "車折神社", "鹿王院", "嵐電嵯峨", "嵐山"],
+                "北野線": ["北野白梅町", "等持院・立命館大学衣笠キャンパス前", "龍安寺", "妙心寺", "御室仁和寺", "宇多野", "鳴滝", "常盤", "撮影所前", "帷子ノ辻"]
+            },
+            "叡山電鉄": {
+                "叡山本線": ["出町柳", "元田中", "茶山・京都芸術大学", "一乗寺", "修学院", "宝ヶ池", "三宅八幡", "八瀬比叡山口"],
+                "鞍馬線": ["宝ヶ池", "八幡前", "岩倉", "木野", "京都精華大前", "二軒茶屋", "市原", "二ノ瀬", "貴船口", "鞍馬"]
+            },
+            "神戸電鉄": {
+                "有馬線": ["湊川", "長田", "丸山", "鵯越", "鈴蘭台", "北鈴蘭台", "山の街", "箕谷", "谷上", "花山", "大池", "神鉄六甲", "唐櫃台", "有馬口", "有馬温泉"],
+                "三田線": ["有馬口", "五社", "岡場", "田尾寺", "二郎", "道場南口", "神鉄道場", "横山", "三田本町", "三田"],
+                "公園都市線": ["横山", "フラワータウン", "南ウッディタウン", "ウッディタウン中央"],
+                "粟生線": ["鈴蘭台", "鈴蘭台西口", "西鈴蘭台", "藍那", "木津", "木幡", "栄", "押部谷", "緑が丘", "広野ゴルフ場前", "志染", "恵比須", "三木上の丸", "三木", "大村", "樫山", "市場", "小野", "葉多", "粟生"],
+                "神戸高速線": ["新開地", "湊川"]
+            },
+            "能勢電鉄": {
+                "妙見線": ["川西能勢口", "絹延橋", "滝山", "鶯の森", "鼓滝", "多田", "平野", "一の鳥居", "畦野", "山下", "笹部", "光風台", "ときわ台", "妙見口"],
+                "日生線": ["山下", "日生中央"]
+            },
+            "泉北高速鉄道": {
+                "泉北高速鉄道線": ["中百舌鳥", "深井", "泉ケ丘", "栂・美木多", "光明池", "和泉中央"]
+            },
+            "水間鉄道": {
+                "水間線": ["貝塚", "貝塚市役所前", "近義の里", "石才", "清児", "名越", "森", "三ツ松", "三ヶ山口", "水間観音"]
+            },
+            "神戸新交通": {
+                "ポートアイランド線": ["三宮", "貿易センター", "ポートターミナル", "中公園", "みなとじま", "市民広場", "医療センター", "計算科学センター", "神戸空港", "南公園", "中埠頭", "北埠頭"],
+                "六甲アイランド線": ["住吉", "魚崎", "南魚崎", "アイランド北口", "アイランドセンター", "マリンパーク"]
             }
         };
 
@@ -153,23 +229,137 @@
             { from: "山陽", to: "山陽電車" },
             { from: "北急", to: "北大阪急行" },
             { from: "Ｊ西", to: "JR西日本" },
-            { from: "モノレール", to: "大阪モノレール" }
+            { from: "ＪＲ", to: "JR西日本" },
+            { from: "モノレール", to: "大阪モノレール" },
+            { from: "近鉄", to: "近鉄電車" },
+            { from: "京阪", to: "京阪電車" },
+            { from: "阪神", to: "阪神電車" },
+            { from: "阪急", to: "阪急電鉄" },
+            { from: "南海", to: "南海電鉄" },
+            { from: "神戸", to: "神戸市営地下鉄" },
+            { from: "京都市", to: "京都市営地下鉄" },
+            { from: "京福", to: "京福電気鉄道" },
+            { from: "嵐電", to: "京福電気鉄道" },
+            { from: "叡電", to: "叡山電鉄" },
+            { from: "能勢", to: "能勢電鉄" },
+            { from: "泉北", to: "泉北高速鉄道" },
+            { from: "水間", to: "水間鉄道" },
+            { from: "ポート", to: "神戸新交通" },
+            { from: "六甲", to: "神戸新交通" }
         ];
 
+        // デフォルトで主要なゆらぎを網羅 (主要駅 + 新規追加事業者)
         const INITIAL_STATION_ALIASES = [
+            // 大阪メトロ
             { from: "梅田", to: "大阪梅田", company: "" },
-            { from: "河原町", to: "京都河原町", company: "" },
-            { from: "石橋", to: "石橋阪大前", company: "" },
-            { from: "鳴尾", to: "鳴尾・武庫川女子大前", company: "" },
-            { from: "三ノ宮", to: "三ノ宮", company: "" },
-            { from: "三宮", to: "神戸三宮", company: "" },
             { from: "難波", to: "大阪難波", company: "" },
             { from: "なんば", to: "なんば", company: "" },
-            { from: "上本町", to: "大阪上本町", company: "" },
-            { from: "阿部野橋", to: "大阪阿部野橋", company: "" },
-            { from: "柴原", to: "柴原阪大前", company: "" },
-            { from: "箕面", to: "箕面萱野", company: "" },
-            { from: "西代", to: "西代", company: "" }
+            { from: "天王寺", to: "天王寺", company: "" },
+            { from: "新大阪", to: "新大阪", company: "" },
+            { from: "心斎橋", to: "心斎橋", company: "" },
+            { from: "本町", to: "本町", company: "" },
+            { from: "淀屋橋", to: "淀屋橋", company: "" },
+            // 阪急
+            { from: "阪急梅田", to: "大阪梅田", company: "阪急" },
+            { from: "河原町", to: "京都河原町", company: "阪急" },
+            { from: "石橋", to: "石橋阪大前", company: "阪急" },
+            { from: "三宮", to: "神戸三宮", company: "阪急" },
+            { from: "上新", to: "上新庄", company: "阪急" },
+            { from: "淡路", to: "淡路", company: "阪急" },
+            { from: "西宮", to: "西宮北口", company: "阪急" }, 
+            { from: "西北", to: "西宮北口", company: "阪急" },
+            { from: "茨木", to: "茨木市", company: "阪急" },
+            { from: "高槻", to: "高槻市", company: "阪急" },
+            // 阪神
+            { from: "阪神梅田", to: "大阪梅田", company: "阪神" },
+            { from: "阪神三宮", to: "神戸三宮", company: "阪神" },
+            { from: "鳴尾", to: "鳴尾・武庫川女子大前", company: "阪神" },
+            { from: "尼セン", to: "尼崎センタープール前", company: "阪神" },
+            { from: "尼崎", to: "尼崎", company: "阪神" },
+            { from: "西宮", to: "西宮", company: "阪神" },
+            // 京阪
+            { from: "京阪三条", to: "三条", company: "京阪" },
+            { from: "四条", to: "祇園四条", company: "京阪" },
+            { from: "五条", to: "清水五条", company: "京阪" },
+            { from: "七条", to: "七条", company: "京阪" },
+            { from: "八幡", to: "石清水八幡宮", company: "京阪" },
+            { from: "関目", to: "関目", company: "京阪" }, 
+            { from: "枚方", to: "枚方市", company: "京阪" },
+            { from: "寝屋川", to: "寝屋川市", company: "京阪" },
+            // 近鉄
+            { from: "上本町", to: "大阪上本町", company: "近鉄" },
+            { from: "阿部野橋", to: "大阪阿部野橋", company: "近鉄" },
+            { from: "阿倍野", to: "大阪阿部野橋", company: "近鉄" },
+            { from: "難波", to: "大阪難波", company: "近鉄" },
+            { from: "奈良", to: "近鉄奈良", company: "近鉄" },
+            { from: "西大寺", to: "大和西大寺", company: "近鉄" },
+            { from: "八木", to: "大和八木", company: "近鉄" },
+            { from: "高田", to: "大和高田", company: "近鉄" },
+            { from: "丹波橋", to: "近鉄丹波橋", company: "近鉄" },
+            { from: "日本橋", to: "近鉄日本橋", company: "近鉄" },
+            // 南海
+            { from: "難波", to: "難波", company: "南海" },
+            { from: "天茶", to: "天下茶屋", company: "南海" },
+            { from: "新今", to: "新今宮", company: "南海" },
+            { from: "泉佐野", to: "泉佐野", company: "南海" },
+            { from: "和歌山", to: "和歌山市", company: "南海" },
+            { from: "関空", to: "関西空港", company: "南海" },
+            { from: "金剛", to: "金剛", company: "南海" },
+            { from: "堺", to: "堺", company: "南海" },
+            { from: "堺東", to: "堺東", company: "南海" },
+            // 大阪モノレール
+            { from: "柴原", to: "柴原阪大前", company: "モノレール" },
+            { from: "万博", to: "万博記念公園", company: "モノレール" },
+            { from: "蛍池", to: "蛍池", company: "モノレール" },
+            { from: "門真", to: "門真市", company: "モノレール" },
+            { from: "空港", to: "大阪空港", company: "モノレール" },
+            // 北大阪急行
+            { from: "箕面", to: "箕面萱野", company: "北急" },
+            { from: "船場", to: "箕面船場阪大前", company: "北急" },
+            { from: "千中", to: "千里中央", company: "北急" },
+            // 山陽
+            { from: "西代", to: "西代", company: "山陽" },
+            { from: "明石", to: "山陽明石", company: "山陽" },
+            { from: "姫路", to: "山陽姫路", company: "山陽" },
+            { from: "垂水", to: "山陽垂水", company: "山陽" },
+            { from: "須磨", to: "山陽須磨", company: "山陽" },
+            // 嵐電
+            { from: "大宮", to: "四条大宮", company: "京福" },
+            { from: "天神川", to: "嵐電天神川", company: "京福" },
+            { from: "広隆寺", to: "太秦広隆寺", company: "京福" },
+            { from: "嵯峨", to: "嵐電嵯峨", company: "京福" },
+            { from: "白梅町", to: "北野白梅町", company: "京福" },
+            { from: "等持院", to: "等持院・立命館大学衣笠キャンパス前", company: "京福" },
+            // 叡電
+            { from: "茶山", to: "茶山・京都芸術大学", company: "叡電" },
+            { from: "八瀬", to: "八瀬比叡山口", company: "叡電" },
+            { from: "精華大", to: "京都精華大前", company: "叡電" },
+            // 神鉄
+            { from: "道場", to: "神鉄道場", company: "神鉄" },
+            { from: "六甲", to: "神鉄六甲", company: "神鉄" },
+            { from: "三田", to: "三田", company: "神鉄" },
+            { from: "新開地", to: "新開地", company: "神鉄" },
+            // 能勢電
+            { from: "川西", to: "川西能勢口", company: "能勢" },
+            { from: "日生", to: "日生中央", company: "能勢" },
+            { from: "妙見", to: "妙見口", company: "能勢" },
+            // 泉北
+            { from: "泉ヶ丘", to: "泉ケ丘", company: "泉北" },
+            { from: "栂", to: "栂・美木多", company: "泉北" },
+            { from: "中百舌鳥", to: "中百舌鳥", company: "泉北" },
+            // 水間
+            { from: "市役所", to: "貝塚市役所前", company: "水間" },
+            { from: "水間", to: "水間観音", company: "水間" },
+            // 神戸新交通
+            { from: "三宮", to: "三宮", company: "ポート" },
+            { from: "空港", to: "神戸空港", company: "ポート" },
+            { from: "計算科学", to: "計算科学センター", company: "ポート" },
+            { from: "医療", to: "医療センター", company: "ポート" },
+            // JR
+            { from: "三ノ宮", to: "三ノ宮", company: "JR" }, 
+            { from: "大阪", to: "大阪", company: "JR" },
+            { from: "京都", to: "京都", company: "JR" },
+            { from: "天王寺", to: "天王寺", company: "JR" }
         ];
 
         const INITIAL_HOLIDAYS = [
@@ -255,19 +445,10 @@
                 const lines = Object.values(STATION_DATA[normalizedCompany]);
                 for (const stations of lines) {
                     for (const masterStation of stations) {
-                        // 文字列を含んでいるかチェック
-                        if (masterStation.includes(stationName) || stationName.includes(masterStation)) {
-                            // 共通部分の長さをチェック
-                            let matchCount = 0;
-                            const minLen = Math.min(masterStation.length, stationName.length);
-                            // 簡易的な共通文字数カウント（連続でなくてもよいが、ここでは連続性を重視せず文字の一致を見る）
-                            // ただし「大阪」「新大阪」などの誤爆を防ぐため、前方/後方一致や含む関係を重視
-                            if (masterStation.indexOf(stationName) !== -1 || stationName.indexOf(masterStation) !== -1) {
-                                matchCount = minLen; // 包含関係なら短い方の長さが一致数
-                            }
-                            
-                            // 3文字以上一致していれば採用
-                            if (matchCount >= 3) {
+                        // 3文字以上一致チェック
+                        if (masterStation.length >= 3 && stationName.length >= 3) {
+                            if (masterStation.includes(stationName) || stationName.includes(masterStation)) {
+                                // 含まれる関係かつ、短い方の長さが3以上なら一致とみなす
                                 return masterStation;
                             }
                         }
@@ -306,19 +487,15 @@
 
         const checkStationExists = (stationName, companyPrefix, companyAliases) => {
             const companyName = resolveCompanyAlias(companyPrefix, companyAliases);
-            
-            // 会社不明でも駅名検索（相互乗り入れやマッピング漏れ救済のため全社検索）
             const allCompanies = Object.keys(STATION_DATA);
             let exists = false;
 
-            // まず指定された会社で探す
             if (companyName && STATION_DATA[companyName]) {
                 Object.values(STATION_DATA[companyName]).forEach(lineStations => {
                     if (lineStations.includes(stationName)) exists = true;
                 });
             }
 
-            // 見つからなければ全社検索 (「正式名称と同名」ならOKとするため)
             if (!exists) {
                 allCompanies.forEach(c => {
                     Object.values(STATION_DATA[c]).forEach(lineStations => {
@@ -691,9 +868,18 @@
             const missingUsers = userSummaries.filter(u => !u.isSubmitted && !u.isUnregistered);
             const activeUsers = userSummaries.filter(u => u.isSubmitted);
 
-            // 印刷処理: シンプルにwindow.print()を呼ぶ
+            // 印刷処理
             const handlePrint = () => {
-                window.print();
+                // 通常のプリントダイアログ呼び出し
+                try {
+                    // フォーカスを当ててから印刷を実行（一部のブラウザでの不具合回避）
+                    window.focus();
+                    window.print();
+                } catch (e) {
+                    // エラーハンドリング
+                    console.error("Print failed:", e);
+                    alert("印刷機能の呼び出しに失敗しました。ブラウザのメニュー「ファイル」→「印刷」、またはキーボードショートカット（Ctrl+P / Cmd+P）を使用してください。");
+                }
             };
 
             return (
@@ -701,7 +887,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v10
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v12
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
