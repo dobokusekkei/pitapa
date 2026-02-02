@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v23</title>
+    <title>PiTaPa利用チェックツール v25</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,11 +71,11 @@
                 padding-bottom: 5px;
             }
             
-            /* テーブルデザイン - 行の高さ圧縮 (8pt対応) */
+            /* テーブルデザイン - 行の高さ調整 (8pt対応) */
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                font-size: 8pt !important; /* 全体を8ptに */
+                font-size: 8pt !important; /* 全体を8ptに統一 */
                 table-layout: fixed; 
             }
             th, td { 
@@ -93,31 +93,32 @@
                 text-align: center;
                 font-size: 8pt !important;
                 padding: 1px 0px !important;
-                height: 14px !important;
+                height: auto !important;
             }
             
-            /* 列幅の維持 */
+            /* 列幅 (v24の設定を維持) */
             th:nth-child(1) { width: 5%; }   /* 状態 */
-            th:nth-child(2) { width: 10%; }  /* 日付 */
-            th:nth-child(3) { width: 20%; }  /* 時間 */
-            th:nth-child(4) { width: 28%; }  /* 内容 */
-            th:nth-child(5) { width: 7%; }   /* 金額 */
-            th:nth-child(6) { width: 30%; }  /* 備考 */
+            th:nth-child(2) { width: 9%; }   /* 日付 */
+            th:nth-child(3) { width: 14%; }  /* 時間 */
+            th:nth-child(4) { width: 7%; }   /* 所要 */
+            th:nth-child(5) { width: 28%; }  /* 内容 */
+            th:nth-child(6) { width: 7%; }   /* 金額 */
+            th:nth-child(7) { width: 30%; }  /* 備考 */
 
             /* バッジ */
             td:nth-child(1) span { 
-                font-size: 6pt !important; /* バッジ内は少し小さくしないとあふれる可能性があるため調整 */
+                font-size: 7pt !important; /* バッジ内も可能な限り大きく */
                 padding: 0 !important; 
                 border: 1px solid #999 !important;
                 margin: 0 !important;
                 display: inline-block;
                 white-space: nowrap;
                 line-height: 1;
-                transform: scale(0.9);
+                transform: scale(0.9); /* 枠からはみ出ないようわずかに縮小 */
             }
 
-            /* 日付・時間 */
-            td:nth-child(2), td:nth-child(3) { 
+            /* 日付・時間・所要 */
+            td:nth-child(2), td:nth-child(3), td:nth-child(4) { 
                 text-align: center; 
                 white-space: nowrap; 
                 font-family: Arial, sans-serif; 
@@ -126,20 +127,20 @@
             }
 
             /* 内容・備考 */
-            td:nth-child(4), td:nth-child(6) { 
+            td:nth-child(5), td:nth-child(7) { 
                 text-align: left; 
                 font-size: 8pt !important; 
                 line-height: 1.0 !important;
             }
 
             /* 金額 */
-            td:nth-child(5) { 
+            td:nth-child(6) { 
                 text-align: right; 
                 font-family: Arial, sans-serif; 
                 font-size: 8pt !important;
             }
             
-            /* データ行自体の高さを抑制 */
+            /* データ行自体の高さ */
             tr {
                 height: auto !important; 
             }
@@ -457,10 +458,27 @@
                 if (columns.length >= 5 && columns[0].match(/^\d{4}\/\d{2}\/\d{2}$/)) {
                     const entryTime = columns[1];
                     const exitTime = columns[2];
+                    
                     let timeDisplay = "";
-                    if (entryTime && exitTime) timeDisplay = `${entryTime} - ${exitTime}`;
-                    else if (entryTime) timeDisplay = `${entryTime} -`;
-                    else if (exitTime) timeDisplay = `- ${exitTime}`;
+                    let durationMinutes = 0;
+                    
+                    if (entryTime && exitTime) {
+                         timeDisplay = `${entryTime} - ${exitTime}`;
+                         
+                         // 時間計算 (HH:MM -> 分)
+                         const [eh, em] = entryTime.split(':').map(Number);
+                         const [xh, xm] = exitTime.split(':').map(Number);
+                         if (!isNaN(eh) && !isNaN(em) && !isNaN(xh) && !isNaN(xm)) {
+                             let start = eh * 60 + em;
+                             let end = xh * 60 + xm;
+                             if (end < start) end += 24 * 60; // 日またぎ対応
+                             durationMinutes = end - start;
+                         }
+                    } else if (entryTime) {
+                        timeDisplay = `${entryTime} -`;
+                    } else if (exitTime) {
+                        timeDisplay = `- ${exitTime}`;
+                    }
 
                     results.push({
                         id: `${fileName}-${index}`,
@@ -470,11 +488,22 @@
                         content: columns[3],
                         amount: parseInt(columns[4]),
                         note: columns[5] || "",
+                        durationMinutes,
                         fileName
                     });
                 }
             });
             return results;
+        };
+        
+        // 分 -> 時間.分 (擬似60進数) 変換関数
+        // ユーザー要望: 7.60 -> 8.00 のような計算結果になるように
+        // つまり、単純に 分 を 時間.分 に変換すればよい
+        const formatDuration = (minutes) => {
+            if (!minutes) return "-";
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return `${h}.${m.toString().padStart(2, '0')}`;
         };
 
         const resolveCompanyAlias = (prefix, companyAliases) => {
@@ -656,6 +685,7 @@
                 csvContent += "# === ユーザー定期設定 ===\n# Type, Name, Company, Line, From, To\n";
                 users.forEach(u => {
                     u.passes.forEach(p => {
+                        // v15: name is same as displayName
                         csvContent += `USER,${u.name},${p.company},${p.line},${p.from},${p.to}\n`;
                     });
                 });
@@ -819,6 +849,7 @@
                         name: u.name, 
                         totalAmount: 0, 
                         targetAmount: 0, 
+                        totalMinutes: 0, // 分単位の合計
                         alertCount: 0, 
                         records: [],
                         isSubmitted: false 
@@ -831,6 +862,7 @@
                             name: row.name, 
                             totalAmount: 0, 
                             targetAmount: 0, 
+                            totalMinutes: 0,
                             alertCount: 0, 
                             records: [],
                             isSubmitted: true,
@@ -843,6 +875,9 @@
 
                     if (!row.isIgnored) {
                          map[row.name].totalAmount += row.amount;
+                         if (row.durationMinutes) {
+                             map[row.name].totalMinutes += row.durationMinutes;
+                         }
                          if (row.alerts.length > 0) map[row.name].alertCount++;
                          if (row.alerts.includes('route')) {
                              map[row.name].targetAmount += row.amount;
@@ -878,7 +913,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v23
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v25
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
@@ -1281,6 +1316,10 @@
                                                     {!noUsageUsers.includes(user.name) && (
                                                         <>
                                                             <div className="text-right summary-info">
+                                                                <span className="text-gray-500">所要合計: </span>
+                                                                <span className="font-bold text-blue-600">{formatDuration(user.totalMinutes)}h</span>
+                                                            </div>
+                                                            <div className="text-right border-l pl-4 summary-info">
                                                                 <span className="text-gray-500">定期重複額: </span>
                                                                 <span className="font-bold text-red-600">¥{user.targetAmount.toLocaleString()}</span>
                                                             </div>
@@ -1307,9 +1346,10 @@
                                                 <table className="w-full text-sm text-left whitespace-nowrap">
                                                     <thead className="bg-gray-100 text-gray-600">
                                                         <tr>
-                                                            <th className="px-6 py-3 w-32">状態</th>
-                                                            <th className="px-6 py-3 w-32">日付</th>
-                                                            <th className="px-6 py-3 w-32">時間</th>
+                                                            <th className="px-6 py-3">状態</th>
+                                                            <th className="px-6 py-3">日付</th>
+                                                            <th className="px-6 py-3">時間</th>
+                                                            <th className="px-6 py-3">所要</th>
                                                             <th className="px-6 py-3">内容</th>
                                                             <th className="px-6 py-3 text-right">金額</th>
                                                             <th className="px-6 py-3 text-gray-400">備考</th>
@@ -1318,14 +1358,14 @@
                                                     <tbody className="divide-y divide-gray-100">
                                                         {noUsageUsers.includes(user.name) ? (
                                                             <tr>
-                                                                <td colSpan="6" className="px-6 py-8 text-center text-green-600 font-bold bg-green-50">
+                                                                <td colSpan="7" className="px-6 py-8 text-center text-green-600 font-bold bg-green-50">
                                                                     利用なし（連絡済み）
                                                                     <button onClick={() => toggleNoUsage(user.name)} className="ml-4 text-xs text-gray-400 underline no-print">解除</button>
                                                                 </td>
                                                             </tr>
                                                         ) : user.records.length === 0 ? (
                                                             <tr>
-                                                                <td colSpan="6" className="px-6 py-8 text-center text-gray-400">
+                                                                <td colSpan="7" className="px-6 py-8 text-center text-gray-400">
                                                                     利用履歴なし
                                                                 </td>
                                                             </tr>
@@ -1337,6 +1377,7 @@
                                                                     </td>
                                                                     <td className="px-6 py-3 font-mono text-gray-600">{row.date}</td>
                                                                     <td className="px-6 py-3 font-mono text-gray-600">{row.time}</td>
+                                                                    <td className="px-6 py-3 font-mono text-gray-600">{formatDuration(row.durationMinutes)}</td>
                                                                     <td className="px-6 py-3 font-medium text-gray-800">
                                                                         {/* 空白削除処理 */}
                                                                         {row.content.replace(/[\s　]+/g, ' ')}
