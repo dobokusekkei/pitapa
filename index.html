@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v28</title>
+    <title>PiTaPa利用チェックツール v31</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,7 +28,7 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 印刷用スタイル - A4縦・フォント8pt最適化 */
+        /* 印刷用スタイル - A4縦・極限まで高密度化 */
         @media print {
             @page { 
                 size: A4 portrait; 
@@ -71,21 +71,20 @@
                 padding-bottom: 5px;
             }
             
-            /* テーブルデザイン - 行の高さ圧縮 (8pt対応) */
+            /* テーブルデザイン - 行の高さ圧縮 */
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                font-size: 8pt !important; /* 全体を8ptに */
+                font-size: 8pt !important; 
                 table-layout: fixed; 
             }
             th, td { 
                 border: 1px solid #444; 
-                padding: 1px 2px !important; /* 8ptに合わせて少しだけ余白確保 */
+                padding: 1px 2px !important; 
                 word-wrap: break-word; 
                 vertical-align: middle;
-                line-height: 1.1 !important; /* 8ptの文字が重ならない程度の行間 */
+                line-height: 1.1 !important; 
             }
-            /* ヘッダー行 */
             th { 
                 background-color: #e5e7eb !important; 
                 color: #000 !important; 
@@ -96,7 +95,6 @@
                 height: 14px !important;
             }
             
-            /* 列幅の維持 */
             th:nth-child(1) { width: 5%; }   /* 状態 */
             th:nth-child(2) { width: 10%; }  /* 日付 */
             th:nth-child(3) { width: 20%; }  /* 時間 */
@@ -104,9 +102,8 @@
             th:nth-child(5) { width: 7%; }   /* 金額 */
             th:nth-child(6) { width: 30%; }  /* 備考 */
 
-            /* バッジ */
             td:nth-child(1) span { 
-                font-size: 6pt !important; /* バッジ内は少し小さくしないとあふれる可能性があるため調整 */
+                font-size: 6pt !important; 
                 padding: 0 !important; 
                 border: 1px solid #999 !important;
                 margin: 0 !important;
@@ -116,7 +113,6 @@
                 transform: scale(0.9);
             }
 
-            /* 日付・時間 */
             td:nth-child(2), td:nth-child(3) { 
                 text-align: center; 
                 white-space: nowrap; 
@@ -125,34 +121,26 @@
                 letter-spacing: -0.5px;
             }
 
-            /* 内容・備考 */
             td:nth-child(4), td:nth-child(6) { 
                 text-align: left; 
                 font-size: 8pt !important; 
                 line-height: 1.0 !important;
             }
 
-            /* 金額 */
             td:nth-child(5) { 
                 text-align: right; 
                 font-family: Arial, sans-serif; 
                 font-size: 8pt !important;
             }
             
-            /* データ行自体の高さを抑制 */
-            tr {
-                height: auto !important; 
-            }
+            tr { height: auto !important; }
             
-            /* 色 */
             .bg-red-50 { background-color: #fff0f0 !important; }
             .text-red-600 { color: #000 !important; font-weight: bold; } 
             
-            /* スタイル解除 */
             .shadow-sm { box-shadow: none !important; border: none !important; }
             .rounded-xl { border-radius: 0 !important; border: none !important; }
             
-            /* カード間隔 */
             .result-card { 
                 border-bottom: 1px solid #000; 
                 margin-bottom: 5px; 
@@ -165,13 +153,14 @@
                 margin-bottom: 1px; 
                 padding: 1px 0; 
                 display: flex;
+                flex-wrap: wrap; 
                 justify-content: space-between;
                 align-items: flex-end;
             }
-            .result-header h3 { font-size: 9pt; margin: 0; }
-            .result-header .summary-info { font-size: 8pt; margin: 0; }
+            .result-header h3 { font-size: 9pt; margin: 0; width: 100%; }
+            .result-header .pass-info { font-size: 7pt; color: #333; margin-top: 1px; width: 100%; }
+            .result-header .summary-info { font-size: 8pt; margin: 0; margin-left: auto; }
             
-            /* サマリーボックス */
             .print-summary-box {
                 border: 1px solid #000;
                 padding: 2px 5px;
@@ -279,6 +268,16 @@
                                 <h3 className="font-bold text-base text-blue-800 mb-2">4. 設定の保存</h3>
                                 <p>登録した社員データや独自の設定（休日・ゆらぎ）は、「設定データ操作」からCSVファイルとして保存（エクスポート）できます。次回利用時に読み込むことで、再入力の手間が省けます。</p>
                             </section>
+
+                            <section>
+                                <h3 className="font-bold text-base text-blue-800 mb-2">5. 対象事業者・駅一覧</h3>
+                                <p className="mb-2">本ツールでチェック可能な事業者と路線は以下の通りです。</p>
+                                <div className="h-64 overflow-y-auto border p-2 bg-gray-50 rounded text-xs font-mono whitespace-pre-wrap">
+{Object.entries(STATION_DATA).map(([company, lines]) => (
+    `${company}\n` + Object.entries(lines).map(([line, stations]) => `  - ${line}: ${stations.join(", ")}`).join("\n")
+)).join("\n\n")}
+                                </div>
+                            </section>
                         </div>
                         <div className="mt-6 text-center">
                             <button onClick={onClose} className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">閉じる</button>
@@ -334,7 +333,7 @@
             "阪急電鉄": {
                 "京都線": ["京都河原町", "烏丸", "大宮", "西院", "西京極", "桂", "洛西口", "東向日", "西向日", "長岡天神", "西山天王山", "大山崎", "水無瀬", "上牧", "高槻市", "富田", "総持寺", "茨木市", "南茨木", "摂津市", "正雀", "相川", "上新庄", "淡路", "崇禅寺", "南方", "十三", "大阪梅田"],
                 "宝塚線": ["宝塚", "清荒神", "売布神社", "中山観音", "山本", "雲雀丘花屋敷", "川西能勢口", "池田", "石橋阪大前", "蛍池", "豊中", "岡町", "曽根", "服部天神", "庄内", "三国", "十三", "中津", "大阪梅田"],
-                "神戸線": ["新開地", "高速神戸", "花隈", "神戸三宮", "春日野道", "王子公園", "六甲", "御影", "岡本", "芦屋川", "夙川", "西宮北口", "武庫之荘", "塚口", "園田", "神崎川", "十三", "中津", "大阪梅田"],
+                "神戸線": ["神戸三宮", "春日野道", "王子公園", "六甲", "御影", "岡本", "芦屋川", "夙川", "西宮北口", "武庫之荘", "塚口", "園田", "神崎川", "十三", "中津", "大阪梅田"],
                 "千里線": ["北千里", "山田", "南千里", "千里山", "関大前", "豊津", "吹田", "下新庄", "淡路", "柴島", "天神橋筋六丁目"],
                 "嵐山線": ["桂", "上桂", "松尾大社", "嵐山"],
                 "今津線": ["宝塚", "宝塚南口", "逆瀬川", "小林", "仁川", "甲東園", "門戸厄神", "西宮北口", "阪神国道", "今津"],
@@ -343,8 +342,13 @@
                 "甲陽線": ["夙川", "苦楽園口", "甲陽園"]
             },
             "阪神電車": {
-                "本線": ["西代", "高速長田", "大開", "新開地", "高速神戸", "西元町", "元町", "神戸三宮", "春日野道", "岩屋", "西灘", "大石", "新在家", "石屋川", "御影", "住吉", "魚崎", "青木", "深江", "芦屋", "打出", "香櫨園", "西宮", "今津", "久寿川", "甲子園", "鳴尾・武庫川女子大前", "武庫川", "尼崎センタープール前", "出屋敷", "尼崎", "大物", "杭瀬", "千船", "姫島", "淀川", "野田", "福島", "大阪梅田"],
+                "本線": ["元町", "神戸三宮", "春日野道", "岩屋", "西灘", "大石", "新在家", "石屋川", "御影", "住吉", "魚崎", "青木", "深江", "芦屋", "打出", "香櫨園", "西宮", "今津", "久寿川", "甲子園", "鳴尾・武庫川女子大前", "武庫川", "尼崎センタープール前", "出屋敷", "尼崎", "大物", "杭瀬", "千船", "姫島", "淀川", "野田", "福島", "大阪梅田"],
                 "なんば線": ["大阪難波", "桜川", "ドーム前", "九条", "西九条", "千鳥橋", "伝法", "福", "出来島", "大物", "尼崎"]
+            },
+            "神戸高速鉄道": {
+                "東西線(阪神・山陽)": ["西代", "高速長田", "大開", "新開地", "高速神戸", "西元町", "元町"],
+                "東西線(阪急)": ["新開地", "高速神戸", "花隈", "神戸三宮"],
+                "南北線": ["湊川", "新開地"]
             },
             "京阪電車": {
                 "本線": ["淀屋橋", "北浜", "天満橋", "京橋", "野江", "関目", "森小路", "千林", "滝井", "土居", "守口市", "西三荘", "門真市", "古川橋", "大和田", "萱島", "寝屋川市", "香里園", "光善寺", "枚方公園", "枚方市", "御殿山", "牧野", "樟葉", "橋本", "石清水八幡宮", "淀", "中書島", "伏見桃山", "丹波橋", "墨染", "藤森", "龍谷大前深草", "伏見稲荷", "鳥羽街道", "東福寺", "七条", "清水五条", "祇園四条", "三条", "神宮丸太町", "出町柳"],
@@ -444,7 +448,8 @@
             { from: "泉北", to: "泉北高速鉄道" },
             { from: "水間", to: "水間鉄道" },
             { from: "ポート", to: "神戸新交通" },
-            { from: "六甲", to: "神戸新交通" }
+            { from: "六甲", to: "神戸新交通" },
+            { from: "高速", to: "神戸高速鉄道" }
         ];
 
         // 手動で設定する特殊な略称（自動生成ルールでカバーできないもの）
@@ -505,11 +510,12 @@
         // --- ゆらぎ自動生成 ---
         const generateDefaultAliases = () => {
             const autoAliases = [];
+            const prefixes = ["大阪", "神戸", "近鉄", "京阪", "阪神", "阪急", "山陽", "能勢", "南海", "高速"]; // "高速"を追加
+
             Object.entries(STATION_DATA).forEach(([company, lines]) => {
                 Object.values(lines).forEach(stations => {
                     stations.forEach(station => {
                         autoAliases.push({ from: station, to: station, company: company });
-                        const prefixes = ["大阪", "神戸", "近鉄", "京阪", "阪神", "阪急", "山陽", "能勢", "南海"];
                         prefixes.forEach(prefix => {
                             if (station.startsWith(prefix) && station.length > prefix.length) {
                                 const shortName = station.substring(prefix.length);
@@ -698,6 +704,8 @@
             const [activeTab, setActiveTab] = useState('upload');
             const [files, setFiles] = useState([]);
             const [parsedData, setParsedData] = useState([]);
+            
+            // Settings
             const [users, setUsers] = useState([]);
             const [holidays, setHolidays] = useState(INITIAL_HOLIDAYS);
             const [holidayInput, setHolidayInput] = useState(INITIAL_HOLIDAYS.join('\n'));
@@ -933,7 +941,8 @@
                         targetAmount: 0, 
                         alertCount: 0, 
                         records: [],
-                        isSubmitted: false 
+                        isSubmitted: false,
+                        passes: u.passes // v30: 定期情報を追加
                     };
                 });
 
@@ -990,7 +999,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v28
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v31
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
@@ -1397,6 +1406,16 @@
                                                         {user.isUnregistered && <span className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded">未登録</span>}
                                                         {noUsageUsers.includes(user.name) && <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded">利用なし連絡済</span>}
                                                     </h3>
+                                                    {user.passes && user.passes.length > 0 && (
+                                                        <div className="pass-info">
+                                                            <span className="font-bold">定期区間: </span>
+                                                            {user.passes.map((p, i) => (
+                                                                <span key={i} className="ml-2">
+                                                                    [{p.company}] {p.from}⇔{p.to}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex gap-4 items-center">
                                                     {!noUsageUsers.includes(user.name) && (
