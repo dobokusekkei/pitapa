@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v38</title>
+    <title>PiTaPa利用チェックツール v43</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -290,7 +290,19 @@
                                 <div className="pl-4 space-y-2 text-xs">
                                     <p>本ツールは、簡易的な経路探索アルゴリズムを用いて定期区間との重複を判定しています。</p>
                                     <ul className="list-disc pl-5">
-                                        <li><strong>接続点:</strong> 同一事業者の同名駅、および相互直通運転等で指定された特定の異事業者間（例：天神橋筋六丁目、長田、竹田など）を接続点として扱います。</li>
+                                        <li><strong>接続点:</strong> 同一事業者の同名駅、および以下の相互直通運転等で指定された接続点を経由して経路を探索します。</li>
+                                        
+                                        <li className="mt-2 mb-2">
+                                            <strong>設定されている相互直通・乗換接続駅:</strong>
+                                            <div className="h-32 overflow-y-auto border p-2 bg-gray-50 rounded mt-1 font-mono">
+                                                {INTER_COMPANY_CONNECTIONS.map((conn, i) => (
+                                                    <div key={i}>・{conn.station} ({conn.companies.join(" ⇔ ")})</div>
+                                                ))}
+                                            </div>
+                                        </li>
+
+                                        <li><strong>大阪環状線の扱い:</strong> 大阪環状線は「天満」と「大阪」が接続され、環状線として探索されます。</li>
+
                                         <li><strong>探索方法:</strong> 幅優先探索(BFS)を用いて、利用区間の「発駅」から「着駅」への最短経路（駅数ベース）を探索します。</li>
                                         <li><strong>重複判定:</strong> 探索された経路上の駅の並びと、登録された定期区間の駅の並びを比較し、2駅以上連続して一致する区間がある場合、その部分を「定期重複」とみなします。</li>
                                         <li><strong>注意点:</strong> 実際の乗車経路と異なる経路（最短経路など）が探索された場合、実際の利用状況と異なる判定結果になる可能性があります。また、振替輸送や特殊な乗り継ぎ割引などは考慮されません。</li>
@@ -588,33 +600,26 @@
         };
 
         const getHolidayType = (dateStr, holidayList) => {
-            // dateStr format expected: "YYYY/MM/DD"
             const parts = dateStr.split(/[\/\-]/);
             if (parts.length !== 3) return null;
             
             const year = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+            const month = parseInt(parts[1], 10) - 1; 
             const day = parseInt(parts[2], 10);
             
-            // Local time date object
             const date = new Date(year, month, day);
             if (isNaN(date.getTime())) return null;
             
-            const dayOfWeek = date.getDay(); // 0:Sun, 6:Sat
+            const dayOfWeek = date.getDay(); 
             
             const pad = (n) => n < 10 ? '0' + n : n;
             const yyyymmdd_slash = `${year}/${pad(month+1)}/${pad(day)}`; 
             const yyyymmdd_hyphen = `${year}-${pad(month+1)}-${pad(day)}`;
 
-            // Check holiday list (priority: Holiday > Sunday > Saturday)
-            // But requirement says: "日曜と休日は薄赤ハッチ", "土曜は薄青ハッチ"
-            // If a Saturday is a holiday, it should be treated as a holiday (red).
-            
             if (holidayList.includes(yyyymmdd_hyphen) || holidayList.includes(yyyymmdd_slash)) {
                 return 'holiday';
             }
             
-            // New Year holidays (12/29 - 1/3)
             if ((month === 11 && day >= 29) || (month === 0 && day <= 3)) {
                 return 'holiday';
             }
@@ -635,7 +640,6 @@
                 const cleanLine = line.replace(/"/g, "");
                 const nameMatch = cleanLine.match(nameRegex);
                 if (nameMatch) {
-                    // v15変更: スペースを削除せずトリムのみ行う
                     currentName = nameMatch[1].trim();
                     return;
                 }
@@ -693,12 +697,10 @@
         };
 
         const parseContent = (content, aliases, companyAliases) => {
-            // 特殊対応: 嵐電（均一運賃で駅名がないパターン）
-            // CSVの「ご利用内容」が「嵐電（京福電車）」と完全一致、または含む場合に対応
             if (content.includes("嵐電（京福電車）")) {
                 return {
-                    from: "嵐電", // ダミー
-                    to: "嵐電",   // ダミー
+                    from: "嵐電", 
+                    to: "嵐電",   
                     companyPrefix: "京福",
                     isRandem: true
                 };
@@ -753,7 +755,7 @@
         // --- グラフ・経路探索ロジック ---
 
         const buildStationGraph = () => {
-            const graph = {}; // nodeKey: [neighborKey, ...]
+            const graph = {}; 
             
             const getNodeKey = (company, station) => `${company}:${station}`;
             const addEdge = (node1, node2) => {
@@ -763,7 +765,6 @@
                 graph[node2].add(node1);
             };
 
-            // 1. 同一事業者内・同一路線の駅を接続
             Object.entries(STATION_DATA).forEach(([company, lines]) => {
                 Object.values(lines).forEach(stations => {
                     for (let i = 0; i < stations.length - 1; i++) {
@@ -774,14 +775,12 @@
                 });
             });
 
-            // 2. 例外設定（他社接続）を適用
             INTER_COMPANY_CONNECTIONS.forEach(conn => {
                 const { station, companies } = conn;
                 for (let i = 0; i < companies.length; i++) {
                     for (let j = i + 1; j < companies.length; j++) {
                         const node1 = getNodeKey(companies[i], station);
                         const node2 = getNodeKey(companies[j], station);
-                        // 両方のノードがグラフ上に存在する場合のみ接続（データ不整合防止）
                         if (graph[node1] && graph[node2]) {
                             addEdge(node1, node2);
                         }
@@ -792,7 +791,6 @@
             return graph;
         };
 
-        // 最短経路探索 (BFS)
         const findShortestPath = (startNodes, endNodes, graph) => {
             if (startNodes.length === 0 || endNodes.length === 0) return null;
             
@@ -821,15 +819,27 @@
             return null;
         };
 
-        // 経路の重複チェック
+        // ヘルパー: 2駅間が含まれる路線名を探す
+        const getLineNameForInterval = (company, station1, station2) => {
+            if (!STATION_DATA[company]) return null;
+            for (const [lineName, stations] of Object.entries(STATION_DATA[company])) {
+                const idx1 = stations.indexOf(station1);
+                const idx2 = stations.indexOf(station2);
+                // 隣接している場合のみその路線とする
+                if (idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1) {
+                    return lineName;
+                }
+            }
+            return null;
+        };
+
         const checkPathOverlap = (usagePath, passPath) => {
             if (!usagePath || !passPath) return null;
 
-            // 連続する2ノード（エッジ）が共通しているかチェック
             const passEdges = new Set();
             for (let i = 0; i < passPath.length - 1; i++) {
                 const edge1 = `${passPath[i]}-${passPath[i+1]}`;
-                const edge2 = `${passPath[i+1]}-${passPath[i]}`; // 逆方向も同一視
+                const edge2 = `${passPath[i+1]}-${passPath[i]}`; 
                 passEdges.add(edge1);
                 passEdges.add(edge2);
             }
@@ -854,57 +864,66 @@
                 overlaps.push({ start: maxOverlapStart, end: maxOverlapStart + currentOverlapLength });
             }
 
-            // 全ての重複区間を返すように修正
             if (overlaps.length > 0) {
                 const overlapTexts = overlaps.map(ov => {
                     const startNode = usagePath[ov.start];
                     const endNode = usagePath[ov.end];
-                    // ノード名 "Company:Station" から駅名のみ抽出
-                    const sName = startNode.split(':')[1];
-                    const eName = endNode.split(':')[1];
-                    // 同一駅名の乗り換え（社間移動）のみの場合は表示をスキップ
+                    
+                    const [sComp, sName] = startNode.split(':');
+                    const [eComp, eName] = endNode.split(':');
+                    
                     if (sName === eName) return null;
-                    return `${sName}⇔${eName}`;
+
+                    // 路線名の判定 (同一会社の場合のみ)
+                    let lineName = "";
+                    if (sComp === eComp) {
+                        const foundLine = getLineNameForInterval(sComp, sName, eName);
+                        // 完全には一致しない場合がある（複数駅またぐなど）ため、
+                        // 始点と終点が同じ路線に含まれているか簡易チェックする
+                        // (簡易実装: getLineNameForIntervalは隣接用だが、区間用にはもう少し工夫がいる)
+                        // ここでは、始点と終点の両方を含む路線があればそれを採用する簡易ロジックとする
+                        if (STATION_DATA[sComp]) {
+                            for (const [lName, stations] of Object.entries(STATION_DATA[sComp])) {
+                                if (stations.includes(sName) && stations.includes(eName)) {
+                                    lineName = `(${lName}) `;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    return `${lineName}${sName}⇔${eName}`;
                 }).filter(text => text !== null);
 
-                // 重複を除去して連結
                 return [...new Set(overlapTexts)].join(", ");
             }
             return null;
         };
 
         const checkRouteOverlap = (usage, pass, companyAliases, graph) => {
-            // 特殊対応: 嵐電
             if (usage.isRandem) {
-                // 定期券が京福電気鉄道のものであれば重複とみなす
-                // 京福電気鉄道の定期を持っている＝嵐電全線利用可能とみなす（または特定の路線のみだが、明細からは区間が不明なため、京福定期があれば重複とするのが安全）
                 if (pass.company === "京福電気鉄道") {
                     return { isOverlap: true, overlapText: "定期区間内(均一)" };
                 }
                 return { isOverlap: false };
             }
 
-            // 定期区間の経路取得
             const passStartNode = `${pass.company}:${pass.from}`;
             const passEndNode = `${pass.company}:${pass.to}`;
             
-            // 定期区間のノードが存在しない場合は判定不可
             if (!graph[passStartNode] || !graph[passEndNode]) return { isOverlap: false };
 
             const passPath = findShortestPath([passStartNode], [passEndNode], graph);
-            if (!passPath) return { isOverlap: false }; // 定期区間がつながらない（データ不備等）
+            if (!passPath) return { isOverlap: false }; 
 
-            // 利用区間の開始・終了ノード候補の検索
             const usageCompany = resolveCompanyAlias(usage.companyPrefix, companyAliases);
             
             const findCandidateNodes = (stationName, preferredCompany) => {
                 const candidates = [];
-                // 明示された会社があればそれを優先
                 if (preferredCompany && preferredCompany !== "その他") {
                     const key = `${preferredCompany}:${stationName}`;
                     if (graph[key]) candidates.push(key);
                 }
-                // 見つからない場合、または会社指定がない場合は全会社から同名駅を探す
                 if (candidates.length === 0) {
                     Object.keys(STATION_DATA).forEach(c => {
                         const key = `${c}:${stationName}`;
@@ -919,12 +938,10 @@
 
             if (usageStartNodes.length === 0 || usageEndNodes.length === 0) return { isOverlap: false };
 
-            // 利用区間の最短経路探索
             const usagePath = findShortestPath(usageStartNodes, usageEndNodes, graph);
             
             if (!usagePath) return { isOverlap: false };
 
-            // 重複判定
             const overlapText = checkPathOverlap(usagePath, passPath);
             if (overlapText) {
                 return { isOverlap: true, overlapText };
@@ -1153,6 +1170,15 @@
                         }
                     }
 
+                    let company = "";
+                    if (usageInfo) {
+                         if (usageInfo.isRandem) {
+                             company = "京福電気鉄道";
+                         } else {
+                             company = resolveCompanyAlias(usageInfo.companyPrefix, companyAliases);
+                         }
+                    }
+
                     if (!isIgnored || (usageInfo && !isBus)) { 
                          // Modified holiday check
                          const holidayType = getHolidayType(record.date, holidays);
@@ -1183,7 +1209,7 @@
                         }
                     }
 
-                    return { ...record, alerts, isIgnored, overlapInfoText };
+                    return { ...record, alerts, isIgnored, overlapInfoText, company };
                 });
             }, [parsedData, users, holidays, aliases, companyAliases, stationGraph]); // stationGraphを追加
 
@@ -1197,7 +1223,8 @@
                         alertCount: 0, 
                         records: [],
                         isSubmitted: false,
-                        passes: u.passes // v30: 定期情報を追加
+                        passes: u.passes
+                        // monthlySummary は削除
                     };
                 });
 
@@ -1211,14 +1238,18 @@
                             records: [],
                             isSubmitted: true,
                             isUnregistered: true
+                            // monthlySummary は削除
                         };
                     }
                     
                     map[row.name].isSubmitted = true;
                     map[row.name].records.push(row);
 
+                    // 変更点: 利用総額には対象外も含めるため、常に加算
+                    map[row.name].totalAmount += row.amount;
+
+                    // アラート集計等は対象外を除外したまま（変更なし）
                     if (!row.isIgnored) {
-                         map[row.name].totalAmount += row.amount;
                          if (row.alerts.length > 0) map[row.name].alertCount++;
                          if (row.alerts.includes('route')) {
                              map[row.name].targetAmount += row.amount;
@@ -1227,6 +1258,33 @@
                 });
                 return Object.values(map);
             }, [analyzedData, users]);
+
+            // 全体集計の追加
+            const globalMonthlySummary = useMemo(() => {
+                const summary = {};
+                analyzedData.forEach(row => {
+                    // 利用なし連絡済のユーザーは除外
+                    if (noUsageUsers.includes(row.name)) return;
+                    // 未登録ユーザーも activeUsers に含まれるなら集計対象とする（現状のロジックに合わせる）
+                    
+                    const monthKey = row.date.substring(0, 7); // YYYY/MM
+                    if (!summary[monthKey]) {
+                        summary[monthKey] = { total: 0, details: {} };
+                    }
+                    
+                    summary[monthKey].total += row.amount;
+                    
+                    // 集計キー：会社名があれば会社名、なければ内容（空白圧縮）
+                    let key = row.company || row.content.replace(/[\s　]+/g, ' ').trim();
+                    if (!key) key = "不明";
+
+                    if (!summary[monthKey].details[key]) {
+                        summary[monthKey].details[key] = 0;
+                    }
+                    summary[monthKey].details[key] += row.amount;
+                });
+                return summary;
+            }, [analyzedData, noUsageUsers]);
 
             const missingUsers = userSummaries.filter(u => !u.isSubmitted && !u.isUnregistered && !noUsageUsers.includes(u.name));
             const activeUsers = userSummaries.filter(u => u.isSubmitted && !noUsageUsers.includes(u.name));
@@ -1249,12 +1307,83 @@
                 }
             };
 
+            const handleExportResults = () => {
+                if (analyzedData.length === 0) {
+                    alert("出力するデータがありません。");
+                    return;
+                }
+
+                // CSVエスケープ処理
+                const escape = (txt) => {
+                    if (txt === null || txt === undefined) return "";
+                    const stringTxt = String(txt);
+                    if (stringTxt.includes(",") || stringTxt.includes("\"") || stringTxt.includes("\n")) {
+                        return `"${stringTxt.replace(/"/g, '""')}"`;
+                    }
+                    return stringTxt;
+                };
+
+                // 集計セクションの作成
+                let summaryCsv = "";
+                if (Object.keys(globalMonthlySummary).length > 0) {
+                    summaryCsv += "# --- 月別・事業者別集計 (全社員合計) ---\n";
+                    summaryCsv += "年月,区分,金額\n";
+                    Object.entries(globalMonthlySummary).sort().forEach(([month, summary]) => {
+                        Object.entries(summary.details).sort((a, b) => b[1] - a[1]).forEach(([key, amount]) => {
+                            summaryCsv += `${month},${escape(key)},${amount}\n`;
+                        });
+                        summaryCsv += `${month},【合計】,${summary.total}\n`; // 月合計行
+                    });
+                    summaryCsv += "\n"; // セパレータ空行
+                }
+
+                // 明細セクション
+                const header = ["社員名", "日付", "時間", "内容", "金額", "備考", "状態", "重複詳細", "元ファイル名"];
+                const rows = analyzedData.map(row => {
+                    const status = [];
+                    if (row.isIgnored) status.push("対象外");
+                    else if (row.alerts.length === 0) status.push("OK");
+                    else {
+                        row.alerts.forEach(a => {
+                            if (a === 'holiday') status.push("休日");
+                            else if (a === 'sunday') status.push("日曜");
+                            else if (a === 'saturday') status.push("土曜");
+                            else if (a === 'route') status.push("定期重複");
+                            else if (a === 'unknown') status.push("駅名不明");
+                        });
+                    }
+                    
+                    return [
+                        escape(row.name),
+                        escape(row.date),
+                        escape(row.time),
+                        escape(row.content),
+                        row.amount,
+                        escape(row.note),
+                        escape(status.join("/")),
+                        escape(row.overlapInfoText || ""),
+                        escape(row.fileName)
+                    ].join(",");
+                });
+
+                const csvContent = "\uFEFF" + summaryCsv + "# --- 明細データ ---\n" + header.join(",") + "\n" + rows.join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pitapa_check_result_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
             return (
                 <div className="min-h-screen flex flex-col bg-gray-50 text-gray-800">
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v37
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v43
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
@@ -1567,12 +1696,44 @@
                                     </span>
                                     <button 
                                         type="button"
+                                        onClick={handleExportResults}
+                                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 shadow transition"
+                                    >
+                                        <Icons.Download /> 結果CSV出力
+                                    </button>
+                                    <button 
+                                        type="button"
                                         onClick={handlePrint}
                                         className="flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800 shadow transition"
                                     >
                                         <Icons.Printer /> 印刷プレビュー
                                     </button>
                                 </div>
+
+                                {/* 全社集計表示 (新規追加) */}
+                                {Object.keys(globalMonthlySummary).length > 0 && (
+                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 page-break">
+                                        <h3 className="font-bold text-gray-700 mb-4 border-b pb-2">月別・事業者別集計 (全社員合計)</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {Object.entries(globalMonthlySummary).sort().map(([month, summary]) => (
+                                                <div key={month} className="border rounded-lg p-3 bg-gray-50 text-sm break-inside-avoid">
+                                                    <div className="flex justify-between items-center border-b pb-1 mb-2">
+                                                        <span className="font-bold text-lg">{month}</span>
+                                                        <span className="font-bold text-blue-700 text-lg">計 ¥{summary.total.toLocaleString()}</span>
+                                                    </div>
+                                                    <ul className="space-y-1">
+                                                        {Object.entries(summary.details).sort((a, b) => b[1] - a[1]).map(([key, amount]) => (
+                                                            <li key={key} className="flex justify-between text-gray-600 border-b border-dashed border-gray-300 py-1 last:border-0">
+                                                                <span className="truncate pr-2">{key}</span>
+                                                                <span className="font-mono">¥{amount.toLocaleString()}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-2 gap-4 no-print mb-4">
                                     {missingUsers.length > 0 && (
@@ -1684,7 +1845,7 @@
                                                                 <span className="font-bold text-red-600">¥{user.targetAmount.toLocaleString()}</span>
                                                             </div>
                                                             <div className="text-right border-l pl-4 summary-info">
-                                                                <span className="text-gray-500">利用総額(対象外除): </span>
+                                                                <span className="text-gray-500">利用総額(対象外込): </span>
                                                                 <span className="font-bold text-slate-700">¥{user.totalAmount.toLocaleString()}</span>
                                                             </div>
                                                             {user.alertCount > 0 ? (
@@ -1702,6 +1863,8 @@
                                                 </div>
                                             </div>
                                             
+                                            {/* 個別集計表は削除 */}
+
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm text-left whitespace-nowrap">
                                                     <thead className="bg-gray-100 text-gray-600">
