@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v49</title>
+    <title>PiTaPa利用チェックツール v53</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -189,7 +189,8 @@
             UploadFile: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Printer: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
             Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-            Help: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Help: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         };
 
         // --- Components ---
@@ -240,8 +241,9 @@
                                         <h4 className="font-bold">① 社員・定期の登録 (「定期・設定」タブ)</h4>
                                         <ul className="list-disc pl-5">
                                             <li>社員名と定期区間（利用している鉄道会社・路線・区間）を登録します。</li>
+                                            <li>発駅と着駅で異なる事業者（例：大阪メトロ～阪急）を設定可能です。</li>
                                             <li className="text-red-600 font-bold">重要: 社員名はCSVの「○○　○○　様ご利用分」の氏名と【一字一句（全角スペース含む）】完全に一致させてください。</li>
-                                            <li>例：「山口　武志」（全角スペースあり）</li>
+                                            <li>例：「山田　太郎」（全角スペースあり）</li>
                                         </ul>
                                     </div>
                                     <div>
@@ -254,34 +256,68 @@
                                     <div>
                                         <h4 className="font-bold">③ 結果の確認 (「結果確認」タブ)</h4>
                                         <ul className="list-disc pl-5">
-                                            <li><span className="bg-red-100 text-red-800 px-1 rounded">休日/日曜</span>: 日曜・祝日の利用</li>
-                                            <li><span className="bg-blue-100 text-blue-800 px-1 rounded">土曜</span>: 土曜日の利用</li>
-                                            <li><span className="bg-yellow-100 text-yellow-800 px-1 rounded">定期重複</span>: 登録した定期区間内での課金利用</li>
-                                            <li><span className="bg-orange-100 text-orange-800 px-1 rounded">駅名不明</span>: マスタデータにない駅名（ゆらぎ設定で登録推奨）</li>
-                                            <li>未提出者（CSVがない社員）は画面上部にリストアップされます。「利用なし」の連絡があった場合は、名前をクリックして「利用なし連絡済」に切り替えられます。</li>
+                                            <li>画面上部の集計パネルで全体状況を確認します。</li>
+                                            <li>各社員のカードで詳細な利用履歴とアラートを確認します。</li>
+                                            <li>必要に応じて「結果CSV出力」でデータをダウンロードします。</li>
                                         </ul>
                                     </div>
                                 </div>
                             </section>
 
                             <section>
-                                <h3 className="font-bold text-base text-blue-800 mb-2">3. 印刷について</h3>
-                                <p>「印刷プレビュー」ボタンを押すと、A4縦サイズに最適化されたレポートが表示されます。ブラウザの印刷機能を使ってPDF保存や紙への印刷を行ってください。</p>
-                                <p className="text-xs text-gray-500">※プレビューが表示されない場合は、ファイルをPCに保存し、ブラウザで直接開いてから実行してください。</p>
+                                <h3 className="font-bold text-base text-blue-800 mb-2">3. 結果確認画面の見方と操作</h3>
+                                <div className="pl-4 space-y-3">
+                                    <div>
+                                        <h4 className="font-bold border-b border-gray-200 mb-1">上部リストパネルの種類</h4>
+                                        <ul className="list-disc pl-5 text-xs space-y-1">
+                                            <li><span className="font-bold text-red-600">未提出</span>: CSVデータが存在しない社員です。</li>
+                                            <li><span className="font-bold text-gray-600">社員未登録</span>: CSVデータはあるが、定期設定に名前がない社員です。</li>
+                                            <li><span className="font-bold text-yellow-600">定期重複あり</span>: 定期区間内での課金利用が含まれる社員です。</li>
+                                            <li><span className="font-bold text-orange-600">要確認（その他）</span>: 休日利用、対象外（バス等）、駅名不明など、重複以外の確認事項がある社員です。</li>
+                                            <li><span className="font-bold text-blue-600">確認OK</span>: 「要確認」からチェック済みに移動した社員です。</li>
+                                            <li><span className="font-bold text-green-600">利用なし連絡済</span>: 「未提出」から連絡済みに移動した社員です。</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 className="font-bold border-b border-gray-200 mb-1">操作方法（リストの移動）</h4>
+                                        <ul className="list-disc pl-5 text-xs space-y-1">
+                                            <li><strong>詳細へ移動:</strong> 各リストの名前を<span className="font-bold">シングルクリック</span>すると、その社員の詳細カードへスクロールします。</li>
+                                            <li><strong>確認完了/解除:</strong> 「要確認（その他）」の名前を<span className="font-bold">ダブルクリック</span>すると、「確認OK」へ移動します（逆も同様）。</li>
+                                            <li><strong>利用なし登録:</strong> 「未提出」の名前をクリックすると、「利用なし連絡済」へ移動します。</li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold border-b border-gray-200 mb-1">アラート・リンク機能</h4>
+                                        <ul className="list-disc pl-5 text-xs space-y-1">
+                                            <li>定期重複がある場合、備考欄に重複区間（例：大阪⇔新大阪）が表示されます。</li>
+                                            <li>表示された区間をクリックすると、<span className="text-blue-600 underline">Yahoo!路線情報</span>でその区間の検索結果（運賃等）を別タブで開きます。</li>
+                                            <li>CSV出力時は、入場記録がないデータ（退場のみ）の時間表記に「'」を付与し、Excelでのエラーを防いでいます。</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </section>
 
                             <section>
                                 <h3 className="font-bold text-base text-blue-800 mb-2">4. 設定の保存</h3>
                                 <p>登録した社員データや独自の設定（休日・ゆらぎ）は、「設定データ操作」からCSVファイルとして保存（エクスポート）できます。次回利用時に読み込むことで、再入力の手間が省けます。</p>
                             </section>
-
+                            
                             <section>
                                 <h3 className="font-bold text-base text-blue-800 mb-2">5. 対象事業者・駅一覧</h3>
                                 <p className="mb-2">本ツールでチェック可能な事業者と路線は以下の通りです。</p>
                                 <div className="h-64 overflow-y-auto border p-2 bg-gray-50 rounded text-xs font-mono whitespace-pre-wrap">
-{Object.entries(STATION_DATA).map(([company, lines]) => (
-    `${company}\n` + Object.entries(lines).map(([line, stations]) => `  - ${line}: ${stations.join(", ")}`).join("\n")
-)).join("\n\n")}
+                                    {Object.entries(STATION_DATA).map(([company, lines]) => (
+                                        <div key={company} className="mb-2">
+                                            <div className="font-bold">【{company}】</div>
+                                            {Object.entries(lines).map(([line, stations]) => (
+                                                <div key={line} className="ml-2">
+                                                    <span className="font-semibold">・{line}:</span> {stations.join(", ")}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
                                 </div>
                             </section>
 
@@ -291,7 +327,6 @@
                                     <p>本ツールは、簡易的な経路探索アルゴリズムを用いて定期区間との重複を判定しています。</p>
                                     <ul className="list-disc pl-5">
                                         <li><strong>接続点:</strong> 同一事業者の同名駅、および以下の相互直通運転等で指定された接続点を経由して経路を探索します。</li>
-                                        
                                         <li className="mt-2 mb-2">
                                             <strong>設定されている相互直通・乗換接続駅:</strong>
                                             <div className="h-32 overflow-y-auto border p-2 bg-gray-50 rounded mt-1 font-mono">
@@ -300,15 +335,104 @@
                                                 ))}
                                             </div>
                                         </li>
-
                                         <li><strong>大阪環状線の扱い:</strong> 大阪環状線は「天満」と「大阪」が接続され、環状線として探索されます。</li>
-
-                                        <li><strong>探索方法:</strong> 幅優先探索(BFS)を用いて、利用区間の「発駅」から「着駅」への最短経路（駅数ベース）を探索します。</li>
+                                        <li><strong>事業者またぎ:</strong> 定期区間が異なる事業者にまたがる場合（例：Osaka Metro～阪急）も判定可能です。</li>
                                         <li><strong>重複判定:</strong> 探索された経路上の駅の並びと、登録された定期区間の駅の並びを比較し、2駅以上連続して一致する区間がある場合、その部分を「定期重複」とみなします。</li>
-                                        <li><strong>注意点:</strong> 実際の乗車経路と異なる経路（最短経路など）が探索された場合、実際の利用状況と異なる判定結果になる可能性があります。また、振替輸送や特殊な乗り継ぎ割引などは考慮されません。</li>
                                     </ul>
                                 </div>
                             </section>
+                        </div>
+                        <div className="mt-6 text-center">
+                            <button onClick={onClose} className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const HistoryModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal-overlay no-print">
+                    <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Icons.History /> 更新履歴</h2>
+                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 font-bold text-2xl">×</button>
+                        </div>
+                        <div className="space-y-4 text-sm text-gray-700">
+                            <div className="border-l-4 border-blue-500 pl-3">
+                                <h3 className="font-bold text-blue-700">v53 (Current)</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>ユーザーマニュアルの「対象事業者・駅一覧」と「接続駅リスト」を復活</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v52</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>ユーザーマニュアルの更新（入力例、操作説明の拡充）</li>
+                                    <li>更新履歴画面の追加</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v51</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>定期区間登録UIの改修（発着駅それぞれで事業者選択が可能に）</li>
+                                    <li>発側の入力時に着側を自動同期する機能の追加</li>
+                                    <li>事業者またぎの定期区間に対応した経路探索ロジックの修正</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v50</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>重複区間表示の改善（連続する区間を結合して表示）</li>
+                                    <li>Yahoo!路線情報リンクの検索条件を適正化（起終点での検索に変更）</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v49</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>定期区間未登録者のリストアップ機能追加</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v48</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>CSV出力時、入場記録がない時間のExcel表示エラー対策を追加</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v47</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>バス利用などの「対象外」項目も要確認件数に含めるよう変更</li>
+                                    <li>CSV出力の微調整</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v46</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>リスト操作の改善（ダブルクリック判定用のタイマー導入）</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v45</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>「要確認」リストの名前クリックで詳細へ移動、ダブルクリックで「確認OK」へ移動する機能の実装</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v44</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>「要確認（その他）」リストの追加</li>
+                                    <li>「確認OK」機能（トグル）の実装</li>
+                                </ul>
+                            </div>
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v43</h3>
+                                <ul className="list-disc pl-5 text-gray-600">
+                                    <li>結果CSV出力機能の実装</li>
+                                    <li>バージョン表記の統一</li>
+                                </ul>
+                            </div>
                         </div>
                         <div className="mt-6 text-center">
                             <button onClick={onClose} className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">閉じる</button>
@@ -861,18 +985,36 @@
             return null;
         };
 
-        // ヘルパー: 2駅間が含まれる路線名を探す
-        const getLineNameForInterval = (company, station1, station2) => {
-            if (!STATION_DATA[company]) return null;
-            for (const [lineName, stations] of Object.entries(STATION_DATA[company])) {
-                const idx1 = stations.indexOf(station1);
-                const idx2 = stations.indexOf(station2);
-                // 隣接している場合のみその路線とする
-                if (idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1) {
-                    return lineName;
+        // ヘルパー: パスに含まれる路線名を取得
+        const getRoutesInPath = (pathNodes) => {
+            const routes = new Set();
+            for (let i = 0; i < pathNodes.length - 1; i++) {
+                const [c1, s1] = pathNodes[i].split(':');
+                const [c2, s2] = pathNodes[i+1].split(':');
+                
+                if (c1 === c2) {
+                    // 同一会社
+                    if (STATION_DATA[c1]) {
+                        Object.entries(STATION_DATA[c1]).forEach(([line, stations]) => {
+                             // 隣接チェック (インデックスの差が1)
+                             const idx1 = stations.indexOf(s1);
+                             const idx2 = stations.indexOf(s2);
+                             // 通常の路線
+                             if (idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1) {
+                                 routes.add(line);
+                             }
+                             // 環状線対応 (末尾と先頭)
+                             if (idx1 !== -1 && idx2 !== -1) {
+                                 const len = stations.length;
+                                 if ((idx1 === 0 && idx2 === len - 1) || (idx1 === len - 1 && idx2 === 0)) {
+                                      // 環状線対応
+                                 }
+                             }
+                        });
+                    }
                 }
             }
-            return null;
+            return Array.from(routes);
         };
 
         const checkPathOverlap = (usagePath, passPath) => {
@@ -906,8 +1048,24 @@
                 overlaps.push({ start: maxOverlapStart, end: maxOverlapStart + currentOverlapLength });
             }
 
+            // [v50 修正] 連続する重複区間を結合する処理
+            const mergedOverlaps = [];
             if (overlaps.length > 0) {
-                const overlapTexts = overlaps.map(ov => {
+                let current = overlaps[0];
+                for (let i = 1; i < overlaps.length; i++) {
+                    // 終了地点と開始地点が同じ（駅を共有）なら結合
+                    if (overlaps[i].start === current.end) {
+                        current.end = overlaps[i].end;
+                    } else {
+                        mergedOverlaps.push(current);
+                        current = overlaps[i];
+                    }
+                }
+                mergedOverlaps.push(current);
+            }
+
+            if (mergedOverlaps.length > 0) {
+                const overlapTexts = mergedOverlaps.map(ov => {
                     const startNode = usagePath[ov.start];
                     const endNode = usagePath[ov.end];
                     
@@ -916,25 +1074,28 @@
                     
                     if (sName === eName) return null;
 
-                    // 路線名の判定 (同一会社の場合のみ)
-                    let lineName = "";
-                    if (sComp === eComp) {
-                        const foundLine = getLineNameForInterval(sComp, sName, eName);
-                        // 完全には一致しない場合がある（複数駅またぐなど）ため、
-                        // 始点と終点が同じ路線に含まれているか簡易チェックする
-                        // (簡易実装: getLineNameForIntervalは隣接用だが、区間用にはもう少し工夫がいる)
-                        // ここでは、始点と終点の両方を含む路線があればそれを採用する簡易ロジックとする
-                        if (STATION_DATA[sComp]) {
-                            for (const [lName, stations] of Object.entries(STATION_DATA[sComp])) {
-                                if (stations.includes(sName) && stations.includes(eName)) {
-                                    lineName = `(${lName}) `;
-                                    break;
-                                }
-                            }
+                    // 重複区間全体のパスを取得して路線名を判定
+                    // v50: 結合された重複区間の経路をチェック
+                    const subPath = usagePath.slice(ov.start, ov.end + 1);
+                    // ここで路線名を取得したいが、事業者またぎがある場合は少し複雑
+                    // 簡易的に各ステップの路線名を集める
+                    const lines = new Set();
+                    for(let i=0; i<subPath.length-1; i++){
+                        const [c1, st1] = subPath[i].split(':');
+                        const [c2, st2] = subPath[i+1].split(':');
+                        if(c1 === c2 && STATION_DATA[c1]){
+                             Object.entries(STATION_DATA[c1]).forEach(([lName, stations]) => {
+                                 // 隣接チェック（簡易）
+                                 if(stations.includes(st1) && stations.includes(st2) && Math.abs(stations.indexOf(st1)-stations.indexOf(st2))===1){
+                                     lines.add(lName);
+                                 }
+                             });
                         }
                     }
+                    
+                    const lineStr = lines.size > 0 ? `(${Array.from(lines).join("・")}) ` : "";
 
-                    return `${lineName}${sName}⇔${eName}`;
+                    return `${lineStr}${sName}⇔${eName}`;
                 }).filter(text => text !== null);
 
                 return [...new Set(overlapTexts)].join(", ");
@@ -950,8 +1111,15 @@
                 return { isOverlap: false };
             }
 
-            const passStartNode = `${pass.company}:${pass.from}`;
-            const passEndNode = `${pass.company}:${pass.to}`;
+            // v51変更: データ構造に応じてノードを特定
+            // 新データ構造(fromCompanyあり) か 旧データ構造(companyのみ) か
+            const pFromComp = pass.fromCompany || pass.company;
+            const pFromSt   = pass.fromStation || pass.from;
+            const pToComp   = pass.toCompany   || pass.company;
+            const pToSt     = pass.toStation   || pass.to;
+
+            const passStartNode = `${pFromComp}:${pFromSt}`;
+            const passEndNode   = `${pToComp}:${pToSt}`;
             
             if (!graph[passStartNode] || !graph[passEndNode]) return { isOverlap: false };
 
@@ -1004,10 +1172,14 @@
             const [aliases, setAliases] = useState([...generateDefaultAliases(), ...MANUAL_STATION_ALIASES]);
             const [companyAliases, setCompanyAliases] = useState(INITIAL_COMPANY_ALIASES);
             const [noUsageUsers, setNoUsageUsers] = useState([]);
-            // [2026-02-06] 追加: 確認OK済みユーザーの管理
+            
             const [checkedOkUsers, setCheckedOkUsers] = useState([]);
-            const [tempUser, setTempUser] = useState({ name: "", passes: [] });
-            const [editingPass, setEditingPass] = useState({ company: "JR西日本", line: "", from: "", to: "" });
+            // v51変更: 2カラム用State
+            const [editingPass, setEditingPass] = useState({
+                fromCompany: "JR西日本", fromLine: "", fromStation: "",
+                toCompany: "JR西日本", toLine: "", toStation: ""
+            });
+
             const [newAlias, setNewAlias] = useState({ from: "", to: "", company: "" });
             const [newCompanyAlias, setNewCompanyAlias] = useState({ from: "", to: "" });
             const [showHelp, setShowHelp] = useState(false);
@@ -1015,17 +1187,59 @@
             // グラフ構築 (キャッシュ)
             const stationGraph = useMemo(() => buildStationGraph(), []);
 
-            const availableLines = useMemo(() => {
-                if (STATION_DATA[editingPass.company]) return Object.keys(STATION_DATA[editingPass.company]);
+            // v51変更: availableLines/Stationsを2つ用意
+            const availableFromLines = useMemo(() => {
+                if (STATION_DATA[editingPass.fromCompany]) return Object.keys(STATION_DATA[editingPass.fromCompany]);
                 return [];
-            }, [editingPass.company]);
+            }, [editingPass.fromCompany]);
 
-            const availableStations = useMemo(() => {
-                if (STATION_DATA[editingPass.company] && STATION_DATA[editingPass.company][editingPass.line]) {
-                    return STATION_DATA[editingPass.company][editingPass.line];
+            const availableFromStations = useMemo(() => {
+                if (STATION_DATA[editingPass.fromCompany] && STATION_DATA[editingPass.fromCompany][editingPass.fromLine]) {
+                    return STATION_DATA[editingPass.fromCompany][editingPass.fromLine];
                 }
                 return [];
-            }, [editingPass.company, editingPass.line]);
+            }, [editingPass.fromCompany, editingPass.fromLine]);
+
+            const availableToLines = useMemo(() => {
+                if (STATION_DATA[editingPass.toCompany]) return Object.keys(STATION_DATA[editingPass.toCompany]);
+                return [];
+            }, [editingPass.toCompany]);
+
+            const availableToStations = useMemo(() => {
+                if (STATION_DATA[editingPass.toCompany] && STATION_DATA[editingPass.toCompany][editingPass.toLine]) {
+                    return STATION_DATA[editingPass.toCompany][editingPass.toLine];
+                }
+                return [];
+            }, [editingPass.toCompany, editingPass.toLine]);
+
+            // 同期処理用ハンドラ
+            const handleFromCompanyChange = (e) => {
+                const val = e.target.value;
+                setEditingPass(prev => ({
+                    ...prev,
+                    fromCompany: val,
+                    fromLine: "",
+                    fromStation: "",
+                    // 自動同期
+                    toCompany: val,
+                    toLine: "",
+                    toStation: ""
+                }));
+            };
+
+            const handleFromLineChange = (e) => {
+                const val = e.target.value;
+                setEditingPass(prev => ({
+                    ...prev,
+                    fromLine: val,
+                    fromStation: "",
+                    // 自動同期 (toCompanyが同じ場合のみ路線も同期)
+                    toLine: (prev.fromCompany === prev.toCompany) ? val : prev.toLine,
+                    toStation: ""
+                }));
+            };
+
+            const [tempUser, setTempUser] = useState({ name: "", passes: [] });
 
             const handleFileUpload = (e) => {
                 const uploadedFiles = Array.from(e.target.files);
@@ -1069,11 +1283,17 @@
 
             const handleExportSettings = () => {
                 let csvContent = "\uFEFF"; 
-                csvContent += "# === ユーザー定期設定 ===\n# Type, Name, Company, Line, From, To\n";
+                csvContent += "# === ユーザー定期設定 ===\n# Type, Name, FromCompany, FromLine, FromStation, ToCompany, ToLine, ToStation\n";
                 users.forEach(u => {
                     u.passes.forEach(p => {
-                        // v15: name is same as displayName
-                        csvContent += `USER,${u.name},${p.company},${p.line},${p.from},${p.to}\n`;
+                        // v51変更: データ構造に応じて出力
+                        const fc = p.fromCompany || p.company;
+                        const fl = p.fromLine || p.line;
+                        const fs = p.fromStation || p.from;
+                        const tc = p.toCompany || p.company;
+                        const tl = p.toLine || p.line;
+                        const ts = p.toStation || p.to;
+                        csvContent += `USER,${u.name},${fc},${fl},${fs},${tc},${tl},${ts}\n`;
                     });
                 });
                 csvContent += "\n# === 休日設定 ===\n# Type, Date\n";
@@ -1110,19 +1330,37 @@
                             const cols = line.split(',').map(c => c.trim());
                             const type = cols[0];
                             
-                            if (type === 'USER' && cols.length >= 6) {
+                            if (type === 'USER') {
+                                // v51変更: カラム数で新旧判定
+                                let pass = {};
                                 const name = cols[1];
-                                const pass = { company: cols[2], line: cols[3], from: cols[4], to: cols[5] };
-                                const existingUser = newUsers.find(u => u.name === name);
-                                if (existingUser) {
-                                    existingUser.passes.push(pass);
-                                } else {
-                                    newUsers.push({
-                                        id: Date.now() + Math.random(),
-                                        displayName: name,
-                                        name: name,
-                                        passes: [pass]
-                                    });
+
+                                if (cols.length >= 8) {
+                                    // 新形式: USER, Name, FromComp, FromLine, FromSt, ToComp, ToLine, ToSt
+                                    pass = {
+                                        fromCompany: cols[2], fromLine: cols[3], fromStation: cols[4],
+                                        toCompany: cols[5], toLine: cols[6], toStation: cols[7]
+                                    };
+                                } else if (cols.length >= 6) {
+                                    // 旧形式: USER, Name, Comp, Line, From, To
+                                    pass = {
+                                        fromCompany: cols[2], fromLine: cols[3], fromStation: cols[4],
+                                        toCompany: cols[2], toLine: cols[3], toStation: cols[5]
+                                    };
+                                }
+
+                                if (pass.fromStation) {
+                                    const existingUser = newUsers.find(u => u.name === name);
+                                    if (existingUser) {
+                                        existingUser.passes.push(pass);
+                                    } else {
+                                        newUsers.push({
+                                            id: Date.now() + Math.random(),
+                                            displayName: name,
+                                            name: name,
+                                            passes: [pass]
+                                        });
+                                    }
                                 }
                             } else if (type === 'HOLIDAY' && cols.length >= 2) newHolidays.push(cols[1]);
                             else if (type === 'COMPANY_ALIAS' && cols.length >= 3) newCompanyAliases.push({ from: cols[1], to: cols[2] });
@@ -1146,12 +1384,16 @@
             };
 
             const handleAddPass = () => {
-                if (!editingPass.from || !editingPass.to) return;
+                if (!editingPass.fromStation || !editingPass.toStation) return;
                 setTempUser(prev => ({
                     ...prev,
                     passes: [...prev.passes, { ...editingPass }]
                 }));
-                setEditingPass(prev => ({ ...prev, from: "", to: "" }));
+                // Reset
+                setEditingPass({
+                    fromCompany: "JR西日本", fromLine: "", fromStation: "",
+                    toCompany: "JR西日本", toLine: "", toStation: ""
+                });
             };
             const handleRemovePass = (idx) => {
                 setTempUser(prev => ({
@@ -1176,7 +1418,10 @@
                 };
                 setUsers([...users, newUser]);
                 setTempUser({ name: "", passes: [] }); 
-                setEditingPass({ company: "JR西日本", line: Object.keys(STATION_DATA["JR西日本"])[0], from: "", to: "" });
+                setEditingPass({
+                    fromCompany: "JR西日本", fromLine: "", fromStation: "",
+                    toCompany: "JR西日本", toLine: "", toStation: ""
+                });
             };
             const removeUser = (id) => {
                 setUsers(users.filter(u => u.id !== id));
@@ -1189,6 +1434,7 @@
                 }
             };
 
+            // ... analyzedData, userSummaries, globalMonthlySummary ... (省略なしで実装)
             const analyzedData = useMemo(() => {
                 return parsedData.map(record => {
                     const alerts = [];
@@ -1203,7 +1449,6 @@
                         alerts.push('bus');
                     } else {
                         if (usageInfo && !isBus) {
-                            // 嵐電以外の場合のみ駅名存在チェックを行う
                             if (!usageInfo.isRandem) {
                                 const fromExists = checkStationExists(usageInfo.from, usageInfo.companyPrefix, companyAliases);
                                 const toExists = checkStationExists(usageInfo.to, usageInfo.companyPrefix, companyAliases);
@@ -1224,7 +1469,6 @@
                     }
 
                     if (!isIgnored || (usageInfo && !isBus)) { 
-                         // Modified holiday check
                          const holidayType = getHolidayType(record.date, holidays);
                          if (holidayType) {
                             alerts.push(holidayType);
@@ -1235,7 +1479,6 @@
                         if (user && user.passes.length > 0 && usageInfo) {
                             const detectedOverlaps = [];
                             for (const pass of user.passes) {
-                                // 変更: グラフを用いた重複チェックを使用
                                 const check = checkRouteOverlap(usageInfo, pass, companyAliases, stationGraph);
                                 if (check.isOverlap) {
                                     if (record.amount > 0) {
@@ -1244,18 +1487,17 @@
                                             detectedOverlaps.push(check.overlapText);
                                         }
                                     }
-                                    // breakを削除し、全ての定期券をチェック
                                 }
                             }
                             if (detectedOverlaps.length > 0) {
-                                overlapInfoText = [...new Set(detectedOverlaps)].join("\n"); // 改行区切りに変更
+                                overlapInfoText = [...new Set(detectedOverlaps)].join("\n"); 
                             }
                         }
                     }
 
                     return { ...record, alerts, isIgnored, overlapInfoText, company };
                 });
-            }, [parsedData, users, holidays, aliases, companyAliases, stationGraph]); // stationGraphを追加
+            }, [parsedData, users, holidays, aliases, companyAliases, stationGraph]);
 
             const userSummaries = useMemo(() => {
                 const map = {};
@@ -1268,7 +1510,6 @@
                         records: [],
                         isSubmitted: false,
                         passes: u.passes
-                        // monthlySummary は削除
                     };
                 });
 
@@ -1282,17 +1523,12 @@
                             records: [],
                             isSubmitted: true,
                             isUnregistered: true
-                            // monthlySummary は削除
                         };
                     }
-                    
                     map[row.name].isSubmitted = true;
                     map[row.name].records.push(row);
-
-                    // 変更点: 利用総額には対象外も含めるため、常に加算
                     map[row.name].totalAmount += row.amount;
 
-                    // v47変更: バス（対象外）も要確認件数に含める
                     if (row.alerts.length > 0) {
                         map[row.name].alertCount++;
                     }
@@ -1306,22 +1542,18 @@
                 return Object.values(map);
             }, [analyzedData, users]);
 
-            // 全体集計の追加
             const globalMonthlySummary = useMemo(() => {
                 const summary = {};
                 analyzedData.forEach(row => {
-                    // 利用なし連絡済のユーザーは除外
                     if (noUsageUsers.includes(row.name)) return;
-                    // 未登録ユーザーも activeUsers に含まれるなら集計対象とする（現状のロジックに合わせる）
                     
-                    const monthKey = row.date.substring(0, 7); // YYYY/MM
+                    const monthKey = row.date.substring(0, 7);
                     if (!summary[monthKey]) {
                         summary[monthKey] = { total: 0, details: {} };
                     }
                     
                     summary[monthKey].total += row.amount;
                     
-                    // 集計キー：会社名があれば会社名、なければ内容（空白圧縮）
                     let key = row.company || row.content.replace(/[\s　]+/g, ' ').trim();
                     if (!key) key = "不明";
 
@@ -1345,8 +1577,6 @@
                     setNoUsageUsers([...noUsageUsers, name]);
                 }
             };
-
-            // [2026-02-06] 追加: 確認OKトグル処理
             const toggleCheckedOk = (name) => {
                 if (checkedOkUsers.includes(name)) {
                     setCheckedOkUsers(checkedOkUsers.filter(n => n !== name));
@@ -1355,16 +1585,12 @@
                 }
             };
 
-            // [2026-02-06] 追加: 「要確認（その他）」ユーザーと「確認OK」ユーザーの抽出
-            // その他要確認: 重複額が0 かつ アラート数>0 かつ 未確認 かつ 利用なしリストにいない
             const otherAlertUsers = userSummaries.filter(u => 
                 u.targetAmount === 0 && 
                 u.alertCount > 0 && 
                 !checkedOkUsers.includes(u.name) &&
                 !noUsageUsers.includes(u.name)
             );
-
-            // 確認OKリスト: 本来なら要確認だがOK済み と 重複ありだがOK済み
             const confirmedAlertUsers = userSummaries.filter(u =>
                 u.alertCount > 0 &&
                 checkedOkUsers.includes(u.name)
@@ -1384,8 +1610,6 @@
                     alert("出力するデータがありません。");
                     return;
                 }
-
-                // CSVエスケープ処理
                 const escape = (txt) => {
                     if (txt === null || txt === undefined) return "";
                     const stringTxt = String(txt);
@@ -1394,8 +1618,6 @@
                     }
                     return stringTxt;
                 };
-
-                // 集計セクションの作成
                 let summaryCsv = "";
                 if (Object.keys(globalMonthlySummary).length > 0) {
                     summaryCsv += "# --- 月別・事業者別集計 (全社員合計) ---\n";
@@ -1404,12 +1626,10 @@
                         Object.entries(summary.details).sort((a, b) => b[1] - a[1]).forEach(([key, amount]) => {
                             summaryCsv += `${month},${escape(key)},${amount}\n`;
                         });
-                        summaryCsv += `${month},【合計】,${summary.total}\n`; // 月合計行
+                        summaryCsv += `${month},【合計】,${summary.total}\n`;
                     });
-                    summaryCsv += "\n"; // セパレータ空行
+                    summaryCsv += "\n";
                 }
-
-                // 明細セクション
                 const header = ["社員名", "日付", "時間", "内容", "金額", "備考", "状態", "重複詳細", "元ファイル名"];
                 const rows = analyzedData.map(row => {
                     const status = [];
@@ -1424,14 +1644,10 @@
                             else if (a === 'unknown') status.push("駅名不明");
                         });
                     }
-                    
-                    // v48変更: 時間が入場なし（ハイフン等で始まる）の場合、Excel対策で先頭に「'」をつける
-                    // 半角ハイフン、全角ハイフン、全角マイナスなどを考慮
                     let displayTime = row.time;
                     if (displayTime && (displayTime.startsWith('-') || displayTime.startsWith('－'))) {
                         displayTime = "'" + displayTime;
                     }
-
                     return [
                         escape(row.name),
                         escape(row.date),
@@ -1444,7 +1660,6 @@
                         escape(row.fileName)
                     ].join(",");
                 });
-
                 const csvContent = "\uFEFF" + summaryCsv + "# --- 明細データ ---\n" + header.join(",") + "\n" + rows.join("\n");
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
@@ -1462,7 +1677,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v49
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v53
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
@@ -1481,17 +1696,27 @@
                                     </button>
                                 ))}
                             </nav>
-                            <button 
-                                onClick={() => setShowHelp(true)}
-                                className="ml-4 text-white hover:text-gray-300 transition"
-                                title="ヘルプ"
-                            >
-                                <Icons.Help />
-                            </button>
+                            <div className="flex items-center gap-4 ml-4">
+                                <button 
+                                    onClick={() => setShowHelp('history')}
+                                    className="text-white hover:text-gray-300 transition"
+                                    title="更新履歴"
+                                >
+                                    <Icons.History />
+                                </button>
+                                <button 
+                                    onClick={() => setShowHelp('help')}
+                                    className="text-white hover:text-gray-300 transition"
+                                    title="ヘルプ"
+                                >
+                                    <Icons.Help />
+                                </button>
+                            </div>
                         </div>
                     </header>
 
-                    <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+                    <HelpModal isOpen={showHelp === 'help'} onClose={() => setShowHelp(false)} />
+                    <HistoryModal isOpen={showHelp === 'history'} onClose={() => setShowHelp(false)} />
 
                     <main className="container mx-auto p-6 flex-grow print-area">
                         {activeTab === 'upload' && (
@@ -1553,73 +1778,104 @@
                                                 <input 
                                                     value={tempUser.name}
                                                     onChange={(e) => setTempUser({...tempUser, name: e.target.value})}
-                                                    placeholder="例: 山口　武志" 
+                                                    placeholder="例: 山田　太郎" 
                                                     className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-200 outline-none" 
                                                 />
                                             </div>
                                             
+                                            {/* v51: 2カラム化した定期登録フォーム */}
                                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="text-sm font-bold text-gray-600">定期区間の追加</span>
+                                                    <span className="text-xs text-gray-500">※左側(発)を変更すると右側(着)も連動します</span>
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                                    <select 
-                                                        className="border p-2 rounded text-sm"
-                                                        value={editingPass.company}
-                                                        onChange={(e) => setEditingPass({...editingPass, company: e.target.value, line: "", from: "", to: ""})}
-                                                    >
-                                                        {Object.keys(STATION_DATA).map(c => <option key={c} value={c}>{c}</option>)}
-                                                        <option value="その他">その他（手動入力）</option>
-                                                    </select>
-                                                    
-                                                    {availableLines.length > 0 ? (
+                                                
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {/* 発駅側 */}
+                                                    <div className="bg-white p-3 rounded border border-gray-200">
+                                                        <span className="block text-xs font-bold text-gray-500 mb-2">発駅側</span>
                                                         <select 
-                                                            className="border p-2 rounded text-sm"
-                                                            value={editingPass.line}
-                                                            onChange={(e) => setEditingPass({...editingPass, line: e.target.value, from: "", to: ""})}
+                                                            className="w-full border p-1 rounded text-sm mb-2"
+                                                            value={editingPass.fromCompany}
+                                                            onChange={handleFromCompanyChange}
                                                         >
-                                                            <option value="">路線を選択...</option>
-                                                            {availableLines.map(l => <option key={l} value={l}>{l}</option>)}
+                                                            {Object.keys(STATION_DATA).map(c => <option key={c} value={c}>{c}</option>)}
+                                                            <option value="その他">その他</option>
                                                         </select>
-                                                    ) : (
-                                                        <input 
-                                                            placeholder="路線名 (任意)" 
-                                                            className="border p-2 rounded text-sm"
-                                                            value={editingPass.line}
-                                                            onChange={(e) => setEditingPass({...editingPass, line: e.target.value})}
-                                                        />
-                                                    )}
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                                    <div>
+                                                        {availableFromLines.length > 0 ? (
+                                                            <select 
+                                                                className="w-full border p-1 rounded text-sm mb-2"
+                                                                value={editingPass.fromLine}
+                                                                onChange={handleFromLineChange}
+                                                            >
+                                                                <option value="">路線を選択...</option>
+                                                                {availableFromLines.map(l => <option key={l} value={l}>{l}</option>)}
+                                                            </select>
+                                                        ) : (
+                                                            <input 
+                                                                placeholder="路線名" 
+                                                                className="w-full border p-1 rounded text-sm mb-2"
+                                                                value={editingPass.fromLine}
+                                                                onChange={(e) => handleFromLineChange(e)}
+                                                            />
+                                                        )}
                                                         <input 
                                                             list="station-list-from"
-                                                            placeholder="発駅" 
-                                                            className="w-full border p-2 rounded text-sm"
-                                                            value={editingPass.from}
-                                                            onChange={(e) => setEditingPass({...editingPass, from: e.target.value})}
+                                                            placeholder="駅名" 
+                                                            className="w-full border p-1 rounded text-sm"
+                                                            value={editingPass.fromStation}
+                                                            onChange={(e) => setEditingPass({...editingPass, fromStation: e.target.value})}
                                                         />
                                                         <datalist id="station-list-from">
-                                                            {availableStations.map(s => <option key={s} value={s} />)}
+                                                            {availableFromStations.map(s => <option key={s} value={s} />)}
                                                         </datalist>
                                                     </div>
-                                                    <div>
+
+                                                    {/* 着駅側 */}
+                                                    <div className="bg-white p-3 rounded border border-gray-200">
+                                                        <span className="block text-xs font-bold text-gray-500 mb-2">着駅側</span>
+                                                        <select 
+                                                            className="w-full border p-1 rounded text-sm mb-2"
+                                                            value={editingPass.toCompany}
+                                                            onChange={(e) => setEditingPass({...editingPass, toCompany: e.target.value, toLine: "", toStation: ""})}
+                                                        >
+                                                            {Object.keys(STATION_DATA).map(c => <option key={c} value={c}>{c}</option>)}
+                                                            <option value="その他">その他</option>
+                                                        </select>
+                                                        {availableToLines.length > 0 ? (
+                                                            <select 
+                                                                className="w-full border p-1 rounded text-sm mb-2"
+                                                                value={editingPass.toLine}
+                                                                onChange={(e) => setEditingPass({...editingPass, toLine: e.target.value, toStation: ""})}
+                                                            >
+                                                                <option value="">路線を選択...</option>
+                                                                {availableToLines.map(l => <option key={l} value={l}>{l}</option>)}
+                                                            </select>
+                                                        ) : (
+                                                            <input 
+                                                                placeholder="路線名" 
+                                                                className="w-full border p-1 rounded text-sm mb-2"
+                                                                value={editingPass.toLine}
+                                                                onChange={(e) => setEditingPass({...editingPass, toLine: e.target.value})}
+                                                            />
+                                                        )}
                                                         <input 
                                                             list="station-list-to"
-                                                            placeholder="着駅" 
-                                                            className="w-full border p-2 rounded text-sm"
-                                                            value={editingPass.to}
-                                                            onChange={(e) => setEditingPass({...editingPass, to: e.target.value})}
+                                                            placeholder="駅名" 
+                                                            className="w-full border p-1 rounded text-sm"
+                                                            value={editingPass.toStation}
+                                                            onChange={(e) => setEditingPass({...editingPass, toStation: e.target.value})}
                                                         />
                                                         <datalist id="station-list-to">
-                                                            {availableStations.map(s => <option key={s} value={s} />)}
+                                                            {availableToStations.map(s => <option key={s} value={s} />)}
                                                         </datalist>
                                                     </div>
                                                 </div>
+
                                                 <button 
                                                     onClick={handleAddPass}
-                                                    disabled={!editingPass.from || !editingPass.to}
-                                                    className="w-full bg-white border border-blue-600 text-blue-600 py-2 rounded text-sm hover:bg-blue-50 disabled:opacity-50"
+                                                    disabled={!editingPass.fromStation || !editingPass.toStation}
+                                                    className="w-full mt-3 bg-white border border-blue-600 text-blue-600 py-2 rounded text-sm hover:bg-blue-50 disabled:opacity-50"
                                                 >
                                                     + 区間リストに追加
                                                 </button>
@@ -1629,7 +1885,11 @@
                                                 <div className="space-y-2">
                                                     {tempUser.passes.map((p, idx) => (
                                                         <div key={idx} className="flex justify-between items-center text-sm bg-blue-50 p-2 rounded border border-blue-100">
-                                                            <span><span className="font-bold text-blue-800">[{p.company}]</span> {p.line} {p.from} ⇔ {p.to}</span>
+                                                            <div className="flex flex-col">
+                                                                <span><span className="font-bold text-blue-800">[{p.fromCompany || p.company}]</span> {p.fromStation || p.from}</span>
+                                                                <span className="text-gray-400 text-xs text-center">⇅</span>
+                                                                <span><span className="font-bold text-blue-800">[{p.toCompany || p.company}]</span> {p.toStation || p.to}</span>
+                                                            </div>
                                                             <button onClick={() => handleRemovePass(idx)} className="text-red-500 hover:text-red-700"><Icons.Trash/></button>
                                                         </div>
                                                     ))}
@@ -1656,9 +1916,10 @@
                                                     <h4 className="font-bold text-lg mb-2">{u.displayName || u.name}</h4>
                                                     <ul className="text-sm space-y-1">
                                                         {u.passes.map((p, i) => (
-                                                            <li key={i} className="text-gray-600">
-                                                                <span className="inline-block px-2 py-0.5 bg-gray-100 rounded text-xs mr-2">{p.company}</span>
-                                                                {p.from} ↔ {p.to} ({p.line})
+                                                            <li key={i} className="text-gray-600 border-b last:border-0 pb-1 mb-1">
+                                                                <div>[{p.fromCompany || p.company}] {p.fromStation || p.from}</div>
+                                                                <div className="pl-4">⇅</div>
+                                                                <div>[{p.toCompany || p.company}] {p.toStation || p.to}</div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1980,8 +2241,8 @@
                                                         <div className="pass-info">
                                                             <span className="font-bold">定期区間: </span>
                                                             {user.passes.map((p, i) => (
-                                                                <span key={i} className="ml-2">
-                                                                    [{p.company}] {p.from}⇔{p.to}
+                                                                <span key={i} className="ml-2 block md:inline">
+                                                                    [{p.fromCompany || p.company}] {p.fromStation || p.from} ⇔ [{p.toCompany || p.company}] {p.toStation || p.to}
                                                                 </span>
                                                             ))}
                                                         </div>
@@ -2056,9 +2317,28 @@
                                                                     <td className="px-6 py-3 text-right font-mono">¥{row.amount.toLocaleString()}</td>
                                                                     <td className="px-6 py-3 truncate max-w-xs text-gray-500">
                                                                         {row.overlapInfoText && (
-                                                                            <span className="block text-xs text-red-600 font-bold mb-1 whitespace-pre-wrap">
-                                                                                重複: {row.overlapInfoText}
-                                                                            </span>
+                                                                            <div className="block text-xs text-red-600 font-bold mb-1">
+                                                                                <span className="mr-1">重複:</span>
+                                                                                {row.overlapInfoText.split('\n').map((text, idx) => {
+                                                                                    // パターンマッチ: (路線名) 駅A⇔駅B または 駅A⇔駅B
+                                                                                    const match = text.match(/^(?:(\(.+\))\s+)?(.+?)⇔(.+)$/);
+                                                                                    if (match) {
+                                                                                        const lineName = match[1] ? match[1] + " " : "";
+                                                                                        const st1 = match[2];
+                                                                                        const st2 = match[3];
+                                                                                        const url = `https://transit.yahoo.co.jp/search/result?from=${encodeURIComponent(st1)}&to=${encodeURIComponent(st2)}`;
+                                                                                        return (
+                                                                                            <div key={idx}>
+                                                                                                {lineName}
+                                                                                                <a href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-red-800" title="Yahoo!路線情報で確認">
+                                                                                                    {st1}⇔{st2}
+                                                                                                </a>
+                                                                                            </div>
+                                                                                        );
+                                                                                    }
+                                                                                    return <div key={idx}>{text}</div>;
+                                                                                })}
+                                                                            </div>
                                                                         )}
                                                                         {row.note}
                                                                     </td>
