@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定期区間CSV結合ツール</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons (アイコン用) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f1f5f9; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* スクロールバーのカスタマイズ */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useRef } = React;
+
+        // アイコンコンポーネント
+        const IconFile = () => <i data-lucide="file" className="w-6 h-6"></i>;
+        const IconUpload = () => <i data-lucide="upload-cloud" className="w-12 h-12"></i>;
+        const IconDownload = () => <i data-lucide="download" className="w-5 h-5"></i>;
+        const IconTrash = () => <i data-lucide="trash-2" className="w-4 h-4"></i>;
+
+        // CSVのヘッダー定義 (PiTaPa Checker互換)
+        const CSV_HEADER_COMMENT = "\uFEFF# === ユーザー定期設定 ==="; // BOM付き
+        const CSV_HEADER_COLUMNS = "# Type, Name, FromCompany, FromLine, FromStation, ToCompany, ToLine, ToStation";
+
+        const App = () => {
+            const [mergedData, setMergedData] = useState([]);
+            const [fileList, setFileList] = useState([]);
+            const [isDragging, setIsDragging] = useState(false);
+            const fileInputRef = useRef(null);
+
+            // Lucideアイコンの再レンダリング用
+            React.useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [mergedData, fileList]);
+
+            // ファイル読み込み処理
+            const processFiles = async (files) => {
+                const newFiles = Array.from(files);
+                // CSVのみフィルタリング（拡張子チェック）
+                const csvFiles = newFiles.filter(f => f.name.toLowerCase().endsWith('.csv'));
+                
+                if (csvFiles.length === 0) {
+                    alert("CSVファイルが含まれていません。");
+                    return;
+                }
+
+                setFileList(prev => [...prev, ...csvFiles]);
+
+                const newRows = [];
+
+                for (const file of csvFiles) {
+                    try {
+                        const text = await file.text();
+                        const lines = text.split(/\r\n|\n/);
+                        
+                        // データ行のみ抽出
+                        // 1. 空行を除外
+                        // 2. '#'で始まるコメント行を除外
+                        const dataLines = lines.filter(line => {
+                            const trimmed = line.trim();
+                            return trimmed !== '' && !trimmed.startsWith('#');
+                        });
+
+                        // どのファイルから来たデータか追跡したい場合はここでオブジェクト化しても良いが
+                        // 今回は単純結合なのでそのまま配列に追加
+                        newRows.push(...dataLines);
+                    } catch (err) {
+                        console.error(`ファイル読み込みエラー: ${file.name}`, err);
+                        alert(`${file.name} の読み込みに失敗しました。`);
+                    }
+                }
+
+                setMergedData(prev => [...prev, ...newRows]);
+            };
+
+            // ドラッグ＆ドロップハンドラ
+            const onDragOver = useCallback((e) => {
+                e.preventDefault();
+                setIsDragging(true);
+            }, []);
+
+            const onDragLeave = useCallback((e) => {
+                e.preventDefault();
+                setIsDragging(false);
+            }, []);
+
+            const onDrop = useCallback((e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    processFiles(e.dataTransfer.files);
+                    e.dataTransfer.clearData();
+                }
+            }, []);
+
+            // ファイル選択ボタンハンドラ
+            const onFileSelect = (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    processFiles(e.target.files);
+                }
+                // 同じファイルを再度選べるようにリセット
+                e.target.value = '';
+            };
+
+            // リセット処理
+            const clearAll = () => {
+                if (confirm("読み込んだデータを全てクリアしますか？")) {
+                    setMergedData([]);
+                    setFileList([]);
+                }
+            };
+
+            // CSVダウンロード処理
+            const downloadMergedCSV = () => {
+                if (mergedData.length === 0) return;
+
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const fileName = `merged_routes_${yyyy}${mm}${dd}.csv`;
+
+                // ヘッダーとデータを結合
+                const content = `${CSV_HEADER_COMMENT}\n${CSV_HEADER_COLUMNS}\n${mergedData.join('\n')}`;
+                
+                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 max-w-5xl mx-auto">
+                    <header className="mb-8 text-center animate-fade-in">
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">定期区間CSV 結合ツール</h1>
+                        <p className="text-sm text-gray-500">収集した個別の申請CSVファイルを1つにまとめます。</p>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+                        
+                        {/* 左側: アップロードエリア */}
+                        <div className="lg:col-span-1 space-y-4">
+                            <div 
+                                className={`
+                                    border-3 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer
+                                    flex flex-col items-center justify-center min-h-[200px]
+                                    ${isDragging ? 'border-blue-500 bg-blue-50 scale-[1.02]' : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-gray-50'}
+                                `}
+                                onDragOver={onDragOver}
+                                onDragLeave={onDragLeave}
+                                onDrop={onDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <input 
+                                    type="file" 
+                                    multiple 
+                                    accept=".csv"
+                                    ref={fileInputRef} 
+                                    className="hidden" 
+                                    onChange={onFileSelect}
+                                />
+                                <div className="text-blue-500 mb-4 pointer-events-none">
+                                    <i data-lucide="upload-cloud" className="w-12 h-12 mx-auto"></i>
+                                </div>
+                                <p className="font-bold text-gray-700 pointer-events-none">ここにファイルをドロップ</p>
+                                <p className="text-xs text-gray-400 mt-2 pointer-events-none">またはクリックしてファイルを選択<br/>(複数選択可)</p>
+                            </div>
+
+                            {/* ステータスカード */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">ステータス</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">読み込みファイル数:</span>
+                                        <span className="font-bold">{fileList.length} 件</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">抽出データ行数:</span>
+                                        <span className="font-bold text-blue-600">{mergedData.length} 行</span>
+                                    </div>
+                                </div>
+                                {fileList.length > 0 && (
+                                    <button 
+                                        onClick={clearAll}
+                                        className="mt-4 w-full flex items-center justify-center gap-2 text-red-500 text-xs border border-red-200 bg-red-50 hover:bg-red-100 py-2 rounded transition"
+                                    >
+                                        <i data-lucide="trash-2" className="w-3 h-3"></i> リセット
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 右側: プレビュー & アクション */}
+                        <div className="lg:col-span-2 flex flex-col h-[600px] bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                            <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+                                <h2 className="font-bold text-slate-700 flex items-center gap-2">
+                                    <i data-lucide="table" className="w-4 h-4"></i>
+                                    結合データプレビュー
+                                </h2>
+                                <button 
+                                    onClick={downloadMergedCSV}
+                                    disabled={mergedData.length === 0}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                                >
+                                    <i data-lucide="download" className="w-4 h-4"></i>
+                                    CSV出力
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-auto custom-scrollbar p-0">
+                                {mergedData.length > 0 ? (
+                                    <table className="w-full text-sm text-left border-collapse">
+                                        <thead className="bg-gray-100 text-gray-600 sticky top-0 shadow-sm z-10">
+                                            <tr>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">No.</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">Type</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">氏名</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">発:事業者</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">発:路線</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">発:駅</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">着:事業者</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">着:路線</th>
+                                                <th className="px-4 py-2 border-b whitespace-nowrap">着:駅</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {mergedData.map((rowStr, index) => {
+                                                // 簡易的なCSVパース (カンマ区切り)
+                                                // 注意: 本格的なCSVパーサではないため、データ内にエスケープされたカンマがあるとずれますが、
+                                                // 今回の生成ツール経由であればフォーマットは一定のため簡易処理で対応
+                                                const cols = rowStr.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+                                                
+                                                return (
+                                                    <tr key={index} className="hover:bg-blue-50 transition-colors">
+                                                        <td className="px-4 py-2 text-gray-400 text-xs border-r">{index + 1}</td>
+                                                        {cols.map((col, cIndex) => (
+                                                            <td key={cIndex} className="px-4 py-2 whitespace-nowrap border-r last:border-r-0 max-w-[150px] overflow-hidden text-ellipsis">
+                                                                {col}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                                        <i data-lucide="file-x" className="w-12 h-12 mb-2 opacity-20"></i>
+                                        <p>データがありません</p>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* フッター情報 */}
+                            <div className="p-2 border-t bg-gray-50 text-xs text-center text-gray-500">
+                                ※プレビューは簡易表示です。正確なデータはダウンロードして確認してください。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
