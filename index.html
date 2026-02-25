@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v55</title>
+    <title>PiTaPa利用チェックツール v56</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1030,9 +1030,10 @@
             return Array.from(routes);
         };
 
-        const checkPathOverlap = (usagePath, passPath) => {
+const checkPathOverlap = (usagePath, passPath) => {
             if (!usagePath || !passPath) return null;
 
+            // 定期券の経路(passPath)から、駅と駅の繋がり(エッジ)を双方向でSetに登録する
             const passEdges = new Set();
             for (let i = 0; i < passPath.length - 1; i++) {
                 const edge1 = `${passPath[i]}-${passPath[i+1]}`;
@@ -1041,10 +1042,86 @@
                 passEdges.add(edge2);
             }
 
+            // ==========================================
+            // JR西日本 大阪駅・北新地駅の特例ルール対応 (適用済み)
+            // ==========================================
+            const ST_AMAGASAKI = "JR西日本:尼崎";
+            const ST_OSAKA = "JR西日本:大阪";
+            const ST_KITASHINCHI = "JR西日本:北新地";
+            const ST_KYOBASHI = "JR西日本:京橋";
+
+            const isSubPath = (path, st1, st2) => {
+                const idx1 = path.indexOf(st1);
+                const idx2 = path.indexOf(st2);
+                return idx1 !== -1 && idx2 !== -1 && idx1 !== idx2;
+            };
+
+            const addVirtualEdges = (sourcePath, st1, st2) => {
+                const idx1 = sourcePath.indexOf(st1);
+                const idx2 = sourcePath.indexOf(st2);
+                const start = Math.min(idx1, idx2);
+                const end = Math.max(idx1, idx2);
+                for (let i = start; i < end; i++) {
+                    passEdges.add(`${sourcePath[i]}-${sourcePath[i+1]}`);
+                    passEdges.add(`${sourcePath[i+1]}-${sourcePath[i]}`);
+                }
+            };
+
+            if (isSubPath(passPath, ST_AMAGASAKI, ST_OSAKA) && isSubPath(usagePath, ST_AMAGASAKI, ST_KITASHINCHI)) {
+                addVirtualEdges(usagePath, ST_AMAGASAKI, ST_KITASHINCHI);
+            } else if (isSubPath(passPath, ST_AMAGASAKI, ST_KITASHINCHI) && isSubPath(usagePath, ST_AMAGASAKI, ST_OSAKA)) {
+                addVirtualEdges(usagePath, ST_AMAGASAKI, ST_OSAKA);
+            }
+
+            if (isSubPath(passPath, ST_KYOBASHI, ST_OSAKA) && isSubPath(usagePath, ST_KYOBASHI, ST_KITASHINCHI)) {
+                addVirtualEdges(usagePath, ST_KYOBASHI, ST_KITASHINCHI);
+            } else if (isSubPath(passPath, ST_KYOBASHI, ST_KITASHINCHI) && isSubPath(usagePath, ST_KYOBASHI, ST_OSAKA)) {
+                addVirtualEdges(usagePath, ST_KYOBASHI, ST_OSAKA);
+            }
+
+            // ==========================================
+            // 大阪メトロ 御堂筋線・四つ橋線 相互利用制度対応 (今回追加)
+            // ==========================================
+            // 特定の2駅間の区間(エッジ)が定期券に含まれている場合、
+            // 対応する別路線の区間も「定期圏内」としてパスプール(passEdges)に追加・同期するヘルパー関数
+            const syncEdges = (stA1, stA2, stB1, stB2) => {
+                const edgeA1 = `${stA1}-${stA2}`;
+                const edgeA2 = `${stA2}-${stA1}`;
+                const edgeB1 = `${stB1}-${stB2}`;
+                const edgeB2 = `${stB2}-${stB1}`;
+
+                // 御堂筋線側の区間(A)を持っていれば、四つ橋線側の区間(B)を合法ルートとして追加
+                if (passEdges.has(edgeA1) || passEdges.has(edgeA2)) {
+                    passEdges.add(edgeB1);
+                    passEdges.add(edgeB2);
+                }
+                // 四つ橋線側の区間(B)を持っていれば、御堂筋線側の区間(A)を合法ルートとして追加
+                if (passEdges.has(edgeB1) || passEdges.has(edgeB2)) {
+                    passEdges.add(edgeA1);
+                    passEdges.add(edgeA2);
+                }
+            };
+
+            // 駅名のプレフィックス定義
+            const OM = "大阪メトロ:";
+
+            // 4つの並行ブロックごとに区間を同期（双方向にコピー）
+            // ※「本町」と「なんば」は両線で同一ノードとして扱われているため、そのまま同じ駅名を指定しています
+            // 1. 梅田～淀屋橋 ⇔ 西梅田～肥後橋
+            syncEdges(`${OM}梅田`, `${OM}淀屋橋`, `${OM}西梅田`, `${OM}肥後橋`);
+            // 2. 淀屋橋～本町 ⇔ 肥後橋～本町
+            syncEdges(`${OM}淀屋橋`, `${OM}本町`, `${OM}肥後橋`, `${OM}本町`);
+            // 3. 本町～心斎橋 ⇔ 本町～四ツ橋
+            syncEdges(`${OM}本町`, `${OM}心斎橋`, `${OM}本町`, `${OM}四ツ橋`);
+            // 4. 心斎橋～なんば ⇔ 四ツ橋～なんば
+            syncEdges(`${OM}心斎橋`, `${OM}なんば`, `${OM}四ツ橋`, `${OM}なんば`);
+            // ==========================================
+
             let maxOverlapStart = -1;
             let currentOverlapLength = 0;
             let overlaps = [];
 
+            // 利用経路(usagePath)のエッジが、定期券の有効エッジ(passEdges)に含まれているか順番に確認
             for (let i = 0; i < usagePath.length - 1; i++) {
                 const edge = `${usagePath[i]}-${usagePath[i+1]}`;
                 if (passEdges.has(edge)) {
@@ -1061,7 +1138,7 @@
                 overlaps.push({ start: maxOverlapStart, end: maxOverlapStart + currentOverlapLength });
             }
 
-            // [v50 修正] 連続する重複区間を結合する処理
+            // 連続する重複区間を結合する処理
             const mergedOverlaps = [];
             if (overlaps.length > 0) {
                 let current = overlaps[0];
@@ -1077,6 +1154,7 @@
                 mergedOverlaps.push(current);
             }
 
+            // 重複テキストの生成
             if (mergedOverlaps.length > 0) {
                 const overlapTexts = mergedOverlaps.map(ov => {
                     const startNode = usagePath[ov.start];
@@ -1087,18 +1165,13 @@
                     
                     if (sName === eName) return null;
 
-                    // 重複区間全体のパスを取得して路線名を判定
-                    // v50: 結合された重複区間の経路をチェック
                     const subPath = usagePath.slice(ov.start, ov.end + 1);
-                    // ここで路線名を取得したいが、事業者またぎがある場合は少し複雑
-                    // 簡易的に各ステップの路線名を集める
                     const lines = new Set();
                     for(let i=0; i<subPath.length-1; i++){
                         const [c1, st1] = subPath[i].split(':');
                         const [c2, st2] = subPath[i+1].split(':');
                         if(c1 === c2 && STATION_DATA[c1]){
                              Object.entries(STATION_DATA[c1]).forEach(([lName, stations]) => {
-                                 // 隣接チェック（簡易）
                                  if(stations.includes(st1) && stations.includes(st2) && Math.abs(stations.indexOf(st1)-stations.indexOf(st2))===1){
                                      lines.add(lName);
                                  }
@@ -1107,7 +1180,6 @@
                     }
                     
                     const lineStr = lines.size > 0 ? `(${Array.from(lines).join("・")}) ` : "";
-
                     return `${lineStr}${sName}⇔${eName}`;
                 }).filter(text => text !== null);
 
@@ -1769,7 +1841,7 @@
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v55
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v56
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
