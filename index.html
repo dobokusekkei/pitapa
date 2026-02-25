@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiTaPa利用チェックツール v57</title>
+    <title>PiTaPa利用チェックツール v58</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -219,6 +219,9 @@
             );
         };
 
+// ==========================================
+// 【更新後】HelpModal コンポーネント
+// ==========================================
         const HelpModal = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             return (
@@ -296,6 +299,16 @@
                                             <li>CSV出力時は、入場記録がないデータ（退場のみ）の時間表記に「'」を付与し、Excelでのエラーを防いでいます。</li>
                                         </ul>
                                     </div>
+
+                                    {/* ★追加：経路詳細の確認方法の説明 */}
+                                    <div>
+                                        <h4 className="font-bold border-b border-gray-200 mb-1">経路詳細の確認・表示機能</h4>
+                                        <ul className="list-disc pl-5 text-xs space-y-1">
+                                            <li>名前の下に表示される<strong>「▶ 定期区間」をクリック</strong>すると、システムが解釈した定期のルート（駅の繋がり）を確認できます。</li>
+                                            <li>備考欄の<strong>「🔍 経路詳細を確認」</strong>をクリックすると、その利用データがたどったルートと、比較された定期のルートが表示されます。</li>
+                                            <li>定期区間と重複している駅や区間（矢印）は、一目でわかるよう<strong>赤色・太字</strong>でハイライト表示されます。</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </section>
 
@@ -337,7 +350,9 @@
                                         </li>
                                         <li><strong>大阪環状線の扱い:</strong> 大阪環状線は「天満」と「大阪」が接続され、環状線として探索されます。</li>
                                         <li><strong>事業者またぎ:</strong> 定期区間が異なる事業者にまたがる場合（例：Osaka Metro～阪急）も判定可能です。</li>
-                                        <li><strong>重複判定:</strong> 探索された経路上の駅の並びと、登録された定期区間の駅の並びを比較し、2駅以上連続して一致する区間がある場合、その部分を「定期重複」とみなします。</li>
+                                        {/* ★追加：特例ルールの説明 */}
+                                        <li><strong>特例ルート判定:</strong> JR（尼崎・京橋～大阪・北新地）、Osaka Metro（御堂筋・四つ橋線相互利用、梅田・東梅田・西梅田の乗換）などの特例ルールに対応しています。</li>
+                                        <li><strong>重複判定:</strong> 探索された経路上の駅の並びと、登録された定期区間の駅の並びを比較し、2駅以上連続して一致する区間がある場合、その部分を「定期重複」とみなし赤色で表示します。</li>
                                     </ul>
                                 </div>
                             </section>
@@ -349,7 +364,9 @@
                 </div>
             );
         };
-
+// ==========================================
+// 【更新後】HistoryModal コンポーネント (全履歴版)
+// ==========================================
         const HistoryModal = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             return (
@@ -360,25 +377,42 @@
                             <button onClick={onClose} className="text-gray-500 hover:text-gray-700 font-bold text-2xl">×</button>
                         </div>
                         <div className="space-y-4 text-sm text-gray-700">
+                            
                             <div className="border-l-4 border-blue-500 pl-3">
-                                <h3 className="font-bold text-blue-700">v55 (Current)</h3>
+                                <h3 className="font-bold text-blue-700">v58 (Current)</h3>
+                                <ul className="list-disc pl-5 text-gray-600 space-y-1 mt-1">
+                                    <li><strong>経路の可視化：</strong>結果画面の備考欄に「🔍 経路詳細を確認」を追加し、システムが判定したルートを表示できるようにしました。</li>
+                                    <li><strong>重複区間のハイライト：</strong>経路詳細にて、定期券と重複している区間（駅や矢印）を一目でわかるよう赤色で強調表示する機能を追加しました。</li>
+                                    <li><strong>定期ルートの展開：</strong>各社員の「定期区間」表示をクリックすると、計算された定期のルートを展開表示できるように改善しました。</li>
+                                    <li><strong>特例ルート対応：</strong>JR西日本の特殊ルール（尼崎・京橋～大阪・北新地）の判定に対応しました。</li>
+                                    <li><strong>特例ルート対応：</strong>Osaka Metroの特殊ルール（御堂筋線・四つ橋線の相互利用）の判定に対応しました。</li>
+                                    <li><strong>特例ルート対応：</strong>Osaka Metro梅田3駅（梅田・東梅田・西梅田）の改札外徒歩乗り継ぎルートを繋ぐ処理を追加しました。</li>
+                                    <li><strong>マスターデータ再編：</strong>神戸高速鉄道の実態に合わせ、各社（阪神・阪急・神鉄）への路線編入と接続を最適化しました。</li>
+                                </ul>
+                            </div>
+                            
+                            <div className="border-l-4 border-gray-300 pl-3">
+                                <h3 className="font-bold text-gray-700">v55</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>設定のブラウザ保存機能を追加（「保存(CSV)」実行時にブラウザにも自動保存）</li>
                                     <li>設定の初期化ボタンを追加</li>
                                 </ul>
                             </div>
+                            
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v54</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>CSVの日付形式が混在（2026/01/14と2026/1/14）している場合に月次集計が分かれてしまう問題を修正</li>
                                 </ul>
                             </div>
+                            
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v53</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>ユーザーマニュアルの「対象事業者・駅一覧」と「接続駅リスト」を復活</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v52</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -386,6 +420,7 @@
                                     <li>更新履歴画面の追加</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v51</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -394,6 +429,7 @@
                                     <li>事業者またぎの定期区間に対応した経路探索ロジックの修正</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v50</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -401,18 +437,21 @@
                                     <li>Yahoo!路線情報リンクの検索条件を適正化（起終点での検索に変更）</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v49</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>定期区間未登録者のリストアップ機能追加</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v48</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>CSV出力時、入場記録がない時間のExcel表示エラー対策を追加</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v47</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -420,18 +459,21 @@
                                     <li>CSV出力の微調整</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v46</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>リスト操作の改善（ダブルクリック判定用のタイマー導入）</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v45</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
                                     <li>「要確認」リストの名前クリックで詳細へ移動、ダブルクリックで「確認OK」へ移動する機能の実装</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v44</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -439,6 +481,7 @@
                                     <li>「確認OK」機能（トグル）の実装</li>
                                 </ul>
                             </div>
+
                             <div className="border-l-4 border-gray-300 pl-3">
                                 <h3 className="font-bold text-gray-700">v43</h3>
                                 <ul className="list-disc pl-5 text-gray-600">
@@ -454,6 +497,7 @@
                 </div>
             );
         };
+// ==========================================
 
         const DoubleClickButton = ({ children, onClick, onDoubleClick, className, title }) => {
             const timerRef = useRef(null);
@@ -2028,7 +2072,7 @@ const checkPathOverlap = (usagePath, passPath) => {
                     <header className="bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
                         <div className="container mx-auto flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v57
+                                <span className="bg-white text-slate-800 p-1 rounded"><Icons.Check/></span> PiTaPa Checker v58
                             </h1>
                             <nav className="flex space-x-2">
                                 {[
